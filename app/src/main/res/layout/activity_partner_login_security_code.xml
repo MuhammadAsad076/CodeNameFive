@@ -11,6 +11,7 @@
         android:id="@+id/imageView"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:padding="6dp"
         android:contentDescription="@string/todo"
         android:scaleType="fitCenter"
         app:layout_constraintBottom_toTopOf="@+id/partner_security_code_cardView"
@@ -22,7 +23,7 @@
     <androidx.cardview.widget.CardView
         android:id="@+id/partner_security_code_cardView"
         android:layout_width="0dp"
-        android:layout_height="230dp"
+        android:layout_height="wrap_content"
         android:elevation="4dp"
         app:cardCornerRadius="2dp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -35,7 +36,7 @@
             android:layout_height="match_parent"
             android:focusable="true"
             android:focusableInTouchMode="true"
-            android:padding="18dp">
+            android:padding="12dp">
 
             <TextView
                 android:id="@+id/login_msg1"
