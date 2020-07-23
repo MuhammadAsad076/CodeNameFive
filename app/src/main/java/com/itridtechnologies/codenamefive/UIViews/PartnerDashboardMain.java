@@ -198,7 +198,7 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                 //check if GPS is on
                 isLocationEnabled();
                 // initialize map
-                //initMap();
+                initMap();
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + requestCode);
