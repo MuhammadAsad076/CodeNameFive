@@ -10,15 +10,16 @@
         android:id="@+id/startProject"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Start Project Demo"
-        android:fontFamily="@font/poppins_semi_bold"
         android:background="#12D2B3"
+        android:fontFamily="@font/poppins_semi_bold"
         android:padding="12dp"
-        android:textSize="32sp"
+        android:text="Start Project"
         android:textColor="@android:color/white"
+        android:textSize="32sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.499" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
