@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/white">
+
+    <TableRow
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="14dp">
+
+            <TextView
+                android:id="@+id/tv_date_from_payments"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                style="@style/BlackPoppinsRegular"
+                android:text="8 June" />
+
+            <TextView
+                android:id="@+id/div"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="4dp"
+                android:layout_toRightOf="@+id/tv_date_from_payments"
+                style="@style/BlackPoppinsRegular"
+                android:text="-"
+                android:layout_toEndOf="@+id/tv_date_from_payments" />
+
+            <TextView
+                android:id="@+id/tv_date_to_payments"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toEndOf="@+id/div"
+                android:layout_toRightOf="@+id/div"
+                style="@style/BlackPoppinsRegular"
+                android:text="14 June" />
+
+
+            <TextView
+                android:id="@+id/tv_payment_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tv_date_from_payments"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentLeft="true"
+                android:fontFamily="@font/poppins_regular"
+                android:text="Unpaid"
+                android:textSize="13sp" />
+
+
+            <ImageView
+                android:id="@+id/img_goto_payment"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="6dp"
+                android:layout_marginRight="6dp"
+                android:src="@drawable/nav_next" />
+
+            <TextView
+                android:id="@+id/tv_total_payments"
+                style="@style/BlackPoppinsRegular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="4dp"
+                android:layout_marginRight="4dp"
+                android:layout_toStartOf="@+id/img_goto_payment"
+                android:layout_toLeftOf="@+id/img_goto_payment"
+                android:text="278.87" />
+
+            <TextView
+                android:id="@+id/currency"
+                style="@style/BlackPoppinsRegular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toStartOf="@+id/tv_total_payments"
+                android:layout_toLeftOf="@+id/tv_total_payments"
+                android:text="@string/curr_sign" />
+
+        </RelativeLayout>
+
+    </TableRow>
+
+    <!-- used for strokes effect !-->
+    <TableRow
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E7E9EB" />
+
+    </TableRow>
+    <!-- used for strokes effect !-->
+
+</TableLayout>

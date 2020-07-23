@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/white">
+
+    <TableRow
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/tv_message"
+                style="@style/BlackPoppinsRegular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentLeft="true"
+                android:text="Earn" />
+
+            <TextView
+                android:id="@+id/tv_support"
+                style="@style/BlackPoppinsRegular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tv_message"
+                android:layout_marginTop="16dp"
+                android:text="Support"
+                android:textColor="@android:color/darker_gray" />
+
+            <TextView
+                android:id="@+id/tv_message_date"
+                style="@style/BlackPoppinsRegular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tv_message"
+                android:layout_marginStart="8dp"
+                android:layout_marginLeft="8dp"
+                android:layout_marginTop="16dp"
+                android:layout_toEndOf="@+id/tv_support"
+                android:layout_toRightOf="@+id/tv_support"
+                android:text="13 June 2020" />
+
+            <TextView
+                android:id="@+id/tv_at"
+                style="@style/BlackPoppinsRegular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tv_message"
+                android:layout_marginStart="8dp"
+                android:layout_marginLeft="8dp"
+                android:layout_marginTop="16dp"
+                android:layout_toEndOf="@+id/tv_message_date"
+                android:layout_toRightOf="@+id/tv_message_date"
+                android:text="at" />
+
+
+            <TextView
+                android:id="@+id/tv_message_time"
+                style="@style/BlackPoppinsRegular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tv_message"
+                android:layout_marginStart="8dp"
+                android:layout_marginLeft="8dp"
+                android:layout_marginTop="16dp"
+                android:layout_toEndOf="@+id/tv_at"
+                android:layout_toRightOf="@+id/tv_at"
+                android:text="14:30" />
+
+        </RelativeLayout>
+
+    </TableRow>
+
+    <!-- used for strokes effect !-->
+    <TableRow
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E7E9EB" />
+
+    </TableRow>
+    <!-- used for strokes effect !-->
+
+</TableLayout>

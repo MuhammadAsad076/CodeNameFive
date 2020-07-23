@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.itridtechnologies.codenamefive">
+    <!-- APP PERMISSIONS ! -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity android:name=".UIViews.NewRestaurantTripRequest"></activity>
+        <!-- Maps API key ! -->
+        <!-- AIzaSyBXfR7Zu7mvhxO4aydatsUY-VUH-_NG15g ! -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBXfR7Zu7mvhxO4aydatsUY-VUH-_NG15g" />
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+
+        <activity android:name=".UIViews.PartnerDashboardMain" />
+        <activity android:name=".UIViews.PartnerInbox" />
+        <activity android:name=".UIViews.PartnerInvoiceDetails" />
+        <activity android:name=".UIViews.PartnerPreviousPayments" />
+        <activity android:name=".UIViews.PartnerEarnings" />
+        <activity android:name=".UIViews.PartnerOrderDetail" />
+        <activity android:name=".UIViews.PartnerTripDayData" />
+        <activity android:name=".UIViews.PartnerTripWeekData" />
+        <activity android:name=".UIViews.PartnerTripsHistory" />
+        <activity android:name=".UIViews.PartnerMapSettings" />
+        <activity android:name=".UIViews.PartnerBankInfo" />
+        <activity android:name=".UIViews.PartnerVehicleInfo" />
+        <activity android:name=".UIViews.PartnerEditProfile" />
+        <activity android:name=".UIViews.PartnerProfile" />
+        <activity android:name=".UIViews.PartnerAppMenu" />
+        <activity android:name=".UIViews.PartnerLoginSecurityCode" />
+        <activity android:name=".UIViews.PartnerLogin" />
+        <activity android:name=".UIViews.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
