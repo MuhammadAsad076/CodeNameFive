@@ -17,6 +17,8 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -36,6 +38,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.itridtechnologies.codenamefive.R;
@@ -73,11 +76,75 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
         goOnline.setOnClickListener(this);
         goOffline.setOnClickListener(this);
 
-        getLocationPermissions();
+        //check GPS & NETWORK
+        if (isNetworkOk()) {
+            if (isGpsOk()) {
+                Log.d(TAG, "onCreate: network and gps is oky..");
+                getLocationPermissions();
+
+            } else {
+                Log.d(TAG, "onCreate: show gps error.....");
+                new AlertDialog.Builder(this)
+                        .setTitle("Location is disabled")
+                        .setMessage("Please turn on location and services.")
+                        .setPositiveButton("Turn on", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                            }
+                        })
+                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        })
+                        .create().show();
+            }
+
+        } else if (!isNetworkOk()) {
+            if (isGpsOk()) {
+                Log.d(TAG, "onCreate: show network error....");
+                new AlertDialog.Builder(this)
+                        .setTitle("You are offline")
+                        .setMessage("Please turn on WiFi.")
+                        .setPositiveButton("Turn on", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+                            }
+                        })
+                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        })
+                        .create().show();
+            } else {
+                Log.d(TAG, "onCreate: all  error///....");
+                new AlertDialog.Builder(this)
+                        .setTitle("Network & Gps is disabled")
+                        .setMessage("Please turn on location and review your network settings.")
+                        .setPositiveButton("Settings", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                startActivity(new Intent(Settings.ACTION_SETTINGS));
+                            }
+                        })
+                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        })
+                        .create().show();
+            }
+        }
 
     }//onCreate
 
-    //public methods
+    //public methods________________________________________________________________________________
 
     public void getDeviceLocation() {
         Log.d(TAG, "getDeviceLocation: getting device current location...");
@@ -93,8 +160,12 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                             Log.d(TAG, "onComplete: location found!");
                             Location currentLocation = (Location) task.getResult();
                             //after getting current location , move camera to current device location
-                            moveCamera(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()),
-                                    DEFAULT_ZOOM);
+                            if (isNetworkOk()) {
+                                moveCamera(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()),
+                                        DEFAULT_ZOOM);
+                            } else {
+                                Toast.makeText(PartnerDashboardMain.this, "Network Error !!", Toast.LENGTH_SHORT).show();
+                            }
                         } else {
                             Log.d(TAG, "onComplete: location not found!");
                             Toast.makeText(PartnerDashboardMain.this, "Unable to find current location !", Toast.LENGTH_SHORT).show();
@@ -145,35 +216,33 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
         mapFragment.getMapAsync(PartnerDashboardMain.this);
     }//end method initMap
 
-    private void isLocationEnabled() {
-        LocationManager lm = (LocationManager)
-                getSystemService(Context.LOCATION_SERVICE);
+    public boolean isGpsOk() {
+        LocationManager locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
         boolean gps_enabled = false;
-        boolean network_enabled = false;
         try {
-            gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            gps_enabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            Log.d(TAG, "isGpsOk: " + gps_enabled);
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        return gps_enabled;
+    }//end gpsOk
+
+    //
+    public boolean isNetworkOk() {
+        boolean connected = false;
         try {
-            network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+            ConnectivityManager cm = (ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo nInfo = cm.getActiveNetworkInfo();
+            connected = nInfo != null && nInfo.isAvailable() && nInfo.isConnected();
+            Log.d(TAG, "isNetworkOk: " + connected);
+
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("Connectivity Exception", e.getMessage());
         }
-        if (!gps_enabled && !network_enabled) {
-            new AlertDialog.Builder(PartnerDashboardMain.this)
-                    .setMessage("Please turn on location and services")
-                    .setPositiveButton("Settings", new
-                            DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
-                                    startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
-                                }
-                            })
-                    .setNegativeButton("Cancel", null)
-                    .show();
-        }//end if
-    }//end method location
+        return connected;
+    }//end method
 
     //override methods
 
@@ -195,8 +264,6 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                 }
                 mLocationPermissionGranted = true;
                 Log.d(TAG, "onRequestPermissionsResult: permission granted..");
-                //check if GPS is on
-                isLocationEnabled();
                 // initialize map
                 initMap();
                 break;
@@ -212,6 +279,7 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
         //..
         if (mLocationPermissionGranted) {
             getDeviceLocation();
+
             //set a little marker to device location
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 return;
@@ -322,4 +390,26 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
         }//end switch
     }//end method
 
+    //public methods________________________________________________________________________________
+
+    //LifeCycle methods________________________________________________________________________________
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG, "onResume: 2- app is resumed from foreground");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d(TAG, "onPause: 1- App is in paused state..");
+
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        Log.d(TAG, "onRestart: 3- activity restarted..");
+    }
 }//endClass

@@ -17,10 +17,10 @@
         android:theme="@style/AppTheme">
         <activity android:name=".UIViews.NewRestaurantTripRequest" />
         <!-- Maps API key ! -->
-        <!-- AIzaSyBXfR7Zu7mvhxO4aydatsUY-VUH-_NG15g ! -->
+        <!-- AIzaSyBMr4IQRIY5q4nfxP4I6LzpkyP08Ko1DU0 ! -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBntno-f5HRK1Q9hCmOYfg_wgpY-iMuOEE" />
+            android:value="@string/GOOGLE_MAP_API_KEY"/>
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />

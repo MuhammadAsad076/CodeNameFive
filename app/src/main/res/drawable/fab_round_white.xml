@@ -5,7 +5,5 @@
         android:width="52dp"
         android:height="52dp" />
     <solid android:color="@android:color/white" />
-    <stroke android:color="@android:color/darker_gray"
-        android:width="1dp"/>
 
 </shape>

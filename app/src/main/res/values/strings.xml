@@ -65,7 +65,7 @@
     <string name="view_invoice_pdf">View invoice PDF</string>
     <string name="pt_inbox">Inbox</string>
     <!-- Google Maps API Key !-->
-    <string name="GOOGLE_MAP_API_KEY">AIzaSyBXfR7Zu7mvhxO4aydatsUY-VUH-_NG15g</string>
+    <string name="GOOGLE_MAP_API_KEY">AIzaSyBMr4IQRIY5q4nfxP4I6LzpkyP08Ko1DU0</string>
     <string name="finding_trips">You\'re offline</string>
     <string name="time_connected">Time connected:</string>
     <string name="finding_trip">Finding trips for you…</string>
