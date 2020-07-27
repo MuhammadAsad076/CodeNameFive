@@ -14,6 +14,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
@@ -24,7 +25,10 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -37,13 +41,23 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.vision.barcode.Barcode;
+import com.google.maps.android.clustering.ClusterManager;
+import com.google.maps.android.ui.IconGenerator;
+import com.itridtechnologies.codenamefive.Models.GoogleMapsClusterItem;
 import com.itridtechnologies.codenamefive.R;
+import com.itridtechnologies.codenamefive.utils.ClusterImageRenderer;
 import com.itridtechnologies.codenamefive.utils.NetworkConnectionState;
 import com.itridtechnologies.codenamefive.utils.NetworkErrorDialog;
+
+import java.util.ArrayList;
+
+import javax.xml.datatype.Duration;
 
 public class PartnerDashboardMain extends AppCompatActivity implements OnMapReadyCallback, View.OnClickListener {
 
@@ -52,16 +66,22 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
     private static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
-    private static final float DEFAULT_ZOOM = 15f;
+    private static final float DEFAULT_ZOOM = 16f;
+    LatLng userCoordinates;
     private boolean mLocationPermissionGranted = false;
-    private int progress = 0;
 
+    //private int progress = 0;
+
+    //UI Views
     private Button goOnline;
     private Button goOffline;
-    private ProgressBar progressBar;
+    private RelativeLayout relativeLayoutGps;
 
     private GoogleMap mMap;
     private FusedLocationProviderClient mFusedLocationProviderClient;
+
+    private ImageButton partnerAppMenu;
+    private ImageButton recenterGps;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,12 +89,17 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
         setContentView(R.layout.activity_partner_dashboard_main);
 
         //find views
+        relativeLayoutGps = findViewById(R.id.rel_lay_gps);
         goOnline = findViewById(R.id.btn_go_online);
         goOffline = findViewById(R.id.btn_go_offline);
+        partnerAppMenu = findViewById(R.id.imgBtn_app_menu);
+        recenterGps = findViewById(R.id.imgBtn_recenter_gps);
 
         //set listener
         goOnline.setOnClickListener(this);
         goOffline.setOnClickListener(this);
+        partnerAppMenu.setOnClickListener(this);
+        recenterGps.setOnClickListener(this);
 
         //check GPS & NETWORK
         if (isNetworkOk()) {
@@ -159,12 +184,14 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                         if (task.isSuccessful()) {
                             Log.d(TAG, "onComplete: location found!");
                             Location currentLocation = (Location) task.getResult();
+
                             //after getting current location , move camera to current device location
-                            if (isNetworkOk()) {
-                                moveCamera(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()),
-                                        DEFAULT_ZOOM);
+                            userCoordinates = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+
+                            if (isNetworkOk() && userCoordinates != null) {
+                                moveCamera(userCoordinates, DEFAULT_ZOOM);
                             } else {
-                                Toast.makeText(PartnerDashboardMain.this, "Network Error !!", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(PartnerDashboardMain.this, "Network error, try again", Toast.LENGTH_SHORT).show();
                             }
                         } else {
                             Log.d(TAG, "onComplete: location not found!");
@@ -180,10 +207,20 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
 
     }//end getLocation
 
-    private void moveCamera(LatLng latLng, float zoom) {
+    private void moveCamera(LatLng latLng, float zoom ) {
         Log.d(TAG, "moveCamera: moving the camera to, lat: " + latLng.latitude + ", lng: " + latLng.longitude);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
+
+        mMap.animateCamera(
+                CameraUpdateFactory.newLatLngZoom(
+                        latLng,
+                        zoom)
+        );
+        //hide recenter gps
+        relativeLayoutGps.setVisibility(View.INVISIBLE);
+        //add marker to map
+        addMapMarker(latLng);
     }//end moveCamera
+
 
     public void getLocationPermissions() {
         Log.d(TAG, "getLocationPermissions: getting location permissions..");
@@ -280,11 +317,21 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
         if (mLocationPermissionGranted) {
             getDeviceLocation();
 
-            //set a little marker to device location
+            //disable compass
+            mMap.getUiSettings().setCompassEnabled(false);
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
             mMap.setMyLocationEnabled(true);
+            mMap.setOnCameraMoveListener(new GoogleMap.OnCameraMoveListener() {
+                @Override
+                public void onCameraMove() {
+                    Log.d(TAG, "onCameraMove: moved.......");
+
+                    relativeLayoutGps.setVisibility(View.VISIBLE);
+                    recenterGps.setVisibility(View.VISIBLE);
+                }
+            });
             //getting rid of default recenter Location button
             //mMap.getUiSettings().setMyLocationButtonEnabled(false);
         }//end if
@@ -299,7 +346,6 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
             case R.id.btn_go_online:
                 if (NetworkConnectionState.isNetworkConnected(this)) {
                     updateUI("online");
-                    updateProgressBar(progress);
                 } else {
                     updateUI("networkError");
                     Toast.makeText(this, "You are offline !", Toast.LENGTH_SHORT).show();
@@ -310,32 +356,17 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                 updateUI("offline");
                 break;
 
+            case R.id.imgBtn_app_menu:
+                startActivity(new Intent(PartnerDashboardMain.this, PartnerAppMenu.class));
+                //open anim
+                overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+                break;
+
+            case R.id.imgBtn_recenter_gps:
+                updateUI("recenter");
+
         }//end switch
     }
-
-    private void updateProgressBar(final int progress) {
-        progressBar = findViewById(R.id.progressBar_finding_rides);
-        final int pMax = progressBar.getMax();
-        // set the progress
-        progressBar.setProgress(progress);
-        // thread is used to change the progress value
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                if (progress < pMax) {
-                    Log.d(TAG, "run: update progress was called" + progress);
-                    updateProgressBar(progress + 20);
-                }
-                progressBar.setVisibility(View.INVISIBLE);
-            }
-        });
-        thread.start();
-    }//end setProgressBar
 
     private void updateUI(String status) {
 
@@ -387,8 +418,44 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                 //show alert dialog
                 NetworkErrorDialog dialog = new NetworkErrorDialog();
                 dialog.show(getSupportFragmentManager(), "NetworkErrorDialog");
+                break;
+
+            case "recenter":
+                //hiding the recenter button
+                recenterGps.setVisibility(View.INVISIBLE);
+                relativeLayoutGps.setVisibility(View.INVISIBLE);
+                //recenter to device location
+                moveCamera(userCoordinates, DEFAULT_ZOOM);
+
+                break;
         }//end switch
     }//end method
+
+    public void addMapMarker(LatLng latLng) {
+        Log.d(TAG, "addMapMarker: trying to add marker");
+
+        ImageView imageView;
+        IconGenerator iconGenerator;
+
+        imageView = new ImageView(this);
+        iconGenerator = new IconGenerator(this);
+
+        imageView.setImageResource(R.drawable.map_pin_customer);
+        imageView.setLayoutParams(new ViewGroup.LayoutParams(128, 128));
+        //imageView.setPadding(4, 4, 4, 4);
+        iconGenerator.setContentView(imageView);
+        iconGenerator.setBackground(null);
+
+        Bitmap icon = iconGenerator.makeIcon();
+
+        MarkerOptions options = new MarkerOptions()
+                .title("Me")
+                .icon(BitmapDescriptorFactory.fromBitmap(icon))
+                .position(new LatLng(31.519123, 74.344939));
+
+
+        mMap.addMarker(options);
+    }//end addMarker
 
     //public methods________________________________________________________________________________
 
@@ -412,4 +479,11 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
         super.onRestart();
         Log.d(TAG, "onRestart: 3- activity restarted..");
     }
+
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
+
 }//endClass

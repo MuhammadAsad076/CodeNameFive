@@ -28,15 +28,14 @@
         <TableRow
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/white">
+            android:background="@android:color/transparent">
 
             <ProgressBar
                 android:id="@+id/progressBar_finding_rides"
                 style="@style/Widget.AppCompat.ProgressBar.Horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:max="100"
-                android:progress="80" />
+                android:indeterminate="true"/>
 
         </TableRow>
 
@@ -198,11 +197,33 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
+        <ImageButton
+            android:id="@+id/imgBtn_app_menu"
             android:layout_width="28dp"
             android:layout_height="28dp"
+            android:background="@android:color/transparent"
             android:src="@drawable/hamburger_icon"
             android:layout_centerInParent="true"/>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/rel_lay_gps"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_margin="22dp"
+        android:background="@drawable/fab_round_white"
+        android:elevation="6dp"
+        app:layout_constraintBottom_toBottomOf="@+id/map"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageButton
+            android:id="@+id/imgBtn_recenter_gps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:background="@android:color/transparent"
+            android:src="@drawable/recenter_gps" />
 
     </RelativeLayout>
 
