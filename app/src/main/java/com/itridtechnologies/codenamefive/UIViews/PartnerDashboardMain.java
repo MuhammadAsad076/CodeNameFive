@@ -1,6 +1,5 @@
 package com.itridtechnologies.codenamefive.UIViews;
 
-import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
@@ -9,7 +8,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
-import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -29,14 +27,12 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -46,12 +42,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.vision.barcode.Barcode;
-import com.google.maps.android.clustering.ClusterManager;
 import com.google.maps.android.ui.IconGenerator;
-import com.itridtechnologies.codenamefive.Models.GoogleMapsClusterItem;
 import com.itridtechnologies.codenamefive.R;
-import com.itridtechnologies.codenamefive.utils.ClusterImageRenderer;
 import com.itridtechnologies.codenamefive.utils.NetworkConnectionState;
 import com.itridtechnologies.codenamefive.utils.NetworkErrorDialog;
 
@@ -66,7 +58,7 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
     private static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
-    private static final float DEFAULT_ZOOM = 16f;
+    private static final float DEFAULT_ZOOM = 15.5f;
     LatLng userCoordinates;
     private boolean mLocationPermissionGranted = false;
 
@@ -189,7 +181,7 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                             userCoordinates = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
 
                             if (isNetworkOk() && userCoordinates != null) {
-                                moveCamera(userCoordinates, DEFAULT_ZOOM);
+                                moveCamera(userCoordinates);
                             } else {
                                 Toast.makeText(PartnerDashboardMain.this, "Network error, try again", Toast.LENGTH_SHORT).show();
                             }
@@ -207,19 +199,54 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
 
     }//end getLocation
 
-    private void moveCamera(LatLng latLng, float zoom ) {
+    private void moveCamera(LatLng latLng) {
         Log.d(TAG, "moveCamera: moving the camera to, lat: " + latLng.latitude + ", lng: " + latLng.longitude);
 
-        mMap.animateCamera(
+        mMap.moveCamera(
                 CameraUpdateFactory.newLatLngZoom(
                         latLng,
-                        zoom)
+                        DEFAULT_ZOOM)
         );
-        //hide recenter gps
-        relativeLayoutGps.setVisibility(View.INVISIBLE);
         //add marker to map
-        addMapMarker(latLng);
+        addMapMarker();
     }//end moveCamera
+
+    private void animateCameraToCurrentLocation() {
+        Log.d(TAG, "animateCameraToCurrentLocation: moving camera to new location...");
+        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+
+        try {
+            if (mLocationPermissionGranted) {
+                userCoordinates = null;
+
+                Task<Location> locationResult = mFusedLocationProviderClient.getLastLocation();
+                locationResult.addOnCompleteListener(new OnCompleteListener<Location>() {
+                    @Override
+                    public void onComplete(@NonNull Task task) {
+                        if (task.isSuccessful()) {
+                            Log.d(TAG, "onComplete: location found!");
+                            Location currentLocation = (Location) task.getResult();
+
+                            //after getting current location , move camera to current device location
+                            userCoordinates = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                            mMap.animateCamera(
+                                    CameraUpdateFactory.newLatLngZoom(
+                                            userCoordinates,
+                                            16.5f
+                                    )
+                            );
+                        } else {
+                            Log.d(TAG, "onComplete: location not found!");
+                            Toast.makeText(PartnerDashboardMain.this, "Unable to find current location !", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            }//end if
+
+        } catch (SecurityException ex) {
+            Log.e(TAG, "getDeviceLocation: Security Exception: " + ex.getMessage());
+        }
+    }// end animateCamera
 
 
     public void getLocationPermissions() {
@@ -317,25 +344,35 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
         if (mLocationPermissionGranted) {
             getDeviceLocation();
 
-            //disable compass
-            mMap.getUiSettings().setCompassEnabled(false);
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
             mMap.setMyLocationEnabled(true);
-            mMap.setOnCameraMoveListener(new GoogleMap.OnCameraMoveListener() {
-                @Override
-                public void onCameraMove() {
-                    Log.d(TAG, "onCameraMove: moved.......");
 
-                    relativeLayoutGps.setVisibility(View.VISIBLE);
-                    recenterGps.setVisibility(View.VISIBLE);
-                }
+            mMap.setOnCameraMoveStartedListener(new GoogleMap.OnCameraMoveStartedListener() {
+                @Override
+                public void onCameraMoveStarted(int i) {
+                    Log.d(TAG, "onCameraMoveStarted: camera moved due to reason: " + i);
+
+                    //camera moved due to developer animation code: 3
+                    if (i == 3) {
+                        recenterGps.setVisibility(View.INVISIBLE);
+                        relativeLayoutGps.setVisibility(View.INVISIBLE);
+                    }
+                    //camera moved due to user gestures code: 1
+                    if (i == 1) {
+                        //show the recenter button
+                        recenterGps.setVisibility(View.VISIBLE);
+                        relativeLayoutGps.setVisibility(View.VISIBLE);
+                    }
+                }//end camera moved
             });
-            //getting rid of default recenter Location button
-            //mMap.getUiSettings().setMyLocationButtonEnabled(false);
+
+            mMap.getUiSettings().setMyLocationButtonEnabled(false);
+            //disable compass
+            mMap.getUiSettings().setCompassEnabled(false);
         }//end if
-    }
+    }//end onMapReady
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -421,17 +458,14 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                 break;
 
             case "recenter":
-                //hiding the recenter button
-                recenterGps.setVisibility(View.INVISIBLE);
-                relativeLayoutGps.setVisibility(View.INVISIBLE);
                 //recenter to device location
-                moveCamera(userCoordinates, DEFAULT_ZOOM);
-
+                animateCameraToCurrentLocation();
                 break;
+
         }//end switch
     }//end method
 
-    public void addMapMarker(LatLng latLng) {
+    public void addMapMarker() {
         Log.d(TAG, "addMapMarker: trying to add marker");
 
         ImageView imageView;
