@@ -16,10 +16,15 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
@@ -27,7 +32,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -40,7 +44,6 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -50,10 +53,6 @@ import com.itridtechnologies.codenamefive.utils.NetworkConnectionState;
 import com.itridtechnologies.codenamefive.utils.NetworkErrorDialog;
 import com.itridtechnologies.codenamefive.utils.RiderManager;
 import com.kusu.loadingbutton.LoadingButton;
-
-import java.util.ArrayList;
-
-import javax.xml.datatype.Duration;
 
 public class PartnerDashboardMain extends AppCompatActivity implements OnMapReadyCallback, View.OnClickListener {
 
@@ -65,7 +64,7 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
     private static final float DEFAULT_ZOOM = 15.5f;
     private LatLng userCoordinates;
     private boolean mLocationPermissionGranted = false;
-
+    MediaPlayer player;
 
     //UI Views
     private LoadingButton goOnline;
@@ -219,6 +218,7 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                         latLng,
                         DEFAULT_ZOOM)
         );
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(15f));
         //add marker to map
         addMapMarker();
     }//end moveCamera
@@ -244,7 +244,7 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                             mMap.animateCamera(
                                     CameraUpdateFactory.newLatLngZoom(
                                             userCoordinates,
-                                            16.5f
+                                            14.5f
                                     )
                             );
                         } else {
@@ -327,24 +327,22 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
         Log.d(TAG, "onRequestPermissionsResult: called.");
         mLocationPermissionGranted = false;
 
-        switch (requestCode) {
-            case LOCATION_PERMISSION_REQUEST_CODE:
-                if (grantResults.length > 0) {
-                    for (int i = 0; i < grantResults.length; i++) {
-                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
-                            mLocationPermissionGranted = false;
-                            Log.d(TAG, "onRequestPermissionsResult: permission failed..");
-                            return;
-                        }
-                    }//end for
-                }
-                mLocationPermissionGranted = true;
-                Log.d(TAG, "onRequestPermissionsResult: permission granted..");
-                // initialize map
-                initMap();
-                break;
-            default:
-                throw new IllegalStateException("Unexpected value: " + requestCode);
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0) {
+                for (int grantResult : grantResults) {
+                    if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                        mLocationPermissionGranted = false;
+                        Log.d(TAG, "onRequestPermissionsResult: permission failed..");
+                        return;
+                    }
+                }//end for
+            }
+            mLocationPermissionGranted = true;
+            Log.d(TAG, "onRequestPermissionsResult: permission granted..");
+            // initialize map
+            initMap();
+        } else {
+            throw new IllegalStateException("Unexpected value: " + requestCode);
         }//end switch
     }
 
@@ -484,31 +482,80 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
         goOnline.showLoading();
 
         //trip lookup in separate thread
-        Thread background = new Thread() {
+        Thread backgroundThread = new Thread() {
             public void run() {
                 try {
                     // Thread will sleep for 3 seconds
                     sleep(3000);
 
-                    // After 5 seconds redirect to another intent
-                    goOnline.hideLoading();
-                    goOnline.setText(R.string.online);
-                    startActivity(new Intent(PartnerDashboardMain.this , NewRestaurantTripRequest.class));
-                    //open anim
-                    overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
-                    //set rider status
-                    RiderManager.setRiderConnected(true);
-
                 } catch (Exception e) {
-                    Log.e(TAG, "run: " + e.getMessage() );
+                    Log.e(TAG, "run: " + e.getMessage());
                 }
+
+                runOnUiThread(new Runnable() {
+                    @RequiresApi(api = Build.VERSION_CODES.O)
+                    @Override
+                    public void run() {
+                        // After 3 seconds redirect to another intent
+                        goOnline.hideLoading();
+                        goOnline.setText(R.string.online);
+                        startActivity(new Intent(PartnerDashboardMain.this, NewRestaurantTripRequest.class));
+                        //open anim
+                        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+                        //sound and vibration feedback
+                        createVibeAlertWithSound(500);
+                        //set rider status
+                        RiderManager.setRiderConnected(true);
+                        Log.d(TAG, "run: trip found");
+                    }
+                });// UI Thread
             }//run
         };
 
         // start thread
-        background.start();
+        backgroundThread.start();
 
     }//end findTrips
+
+    private void createVibeAlertWithSound(int millis) {
+        Log.d(TAG, "createVibeAlertWithSound: trying to give haptic feedback...");
+        //init vibe
+        Vibrator vibe = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+
+        //check for hardware
+        if (vibe.hasVibrator() && player == null) {
+
+            if (Build.VERSION.SDK_INT >= 26) {
+                //vibrate
+                vibe.vibrate(VibrationEffect.createOneShot(millis , VibrationEffect.DEFAULT_AMPLITUDE));
+                player = MediaPlayer.create(this , R.raw.swiftly);
+                //sound
+                player.start();
+                //release player
+                player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mediaPlayer) {
+                        player.release();
+                        player = null;
+                    }
+                });
+            } else {
+                player = MediaPlayer.create(this , R.raw.swiftly);
+                //sound
+                player.start();
+                //release player
+                player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mediaPlayer) {
+                        player.release();
+                        player = null;
+                    }
+                });
+                vibe.vibrate(millis);
+            }
+        }//end if
+
+    }//end vibration
 
     public void addMapMarker() {
         Log.d(TAG, "addMapMarker: trying to add marker");
