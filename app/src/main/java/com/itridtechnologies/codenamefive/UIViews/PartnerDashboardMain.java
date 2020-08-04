@@ -27,6 +27,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -47,6 +48,8 @@ import com.google.maps.android.ui.IconGenerator;
 import com.itridtechnologies.codenamefive.R;
 import com.itridtechnologies.codenamefive.utils.NetworkConnectionState;
 import com.itridtechnologies.codenamefive.utils.NetworkErrorDialog;
+import com.itridtechnologies.codenamefive.utils.RiderManager;
+import com.kusu.loadingbutton.LoadingButton;
 
 import java.util.ArrayList;
 
@@ -60,13 +63,12 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
     private static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
     private static final float DEFAULT_ZOOM = 15.5f;
-    LatLng userCoordinates;
+    private LatLng userCoordinates;
     private boolean mLocationPermissionGranted = false;
 
-    //private int progress = 0;
 
     //UI Views
-    private Button goOnline;
+    private LoadingButton goOnline;
     private Button goOffline;
     private RelativeLayout relativeLayoutGps;
 
@@ -158,6 +160,15 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                         })
                         .create().show();
             }
+        }
+        //check if rider is already online
+        if (RiderManager.getRiderConnected()) {
+            Log.d(TAG, "onCreate: rider is connected..");
+            goOnline.setVisibility(View.INVISIBLE);
+            goOffline.setVisibility(View.VISIBLE);
+            updateUI("online");
+        } else {
+            Log.d(TAG, "onCreate: rider not online yet...");
         }
 
     }//onCreate
@@ -369,7 +380,7 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                     }
                 }//end camera moved
             });
-
+            //mao ui components settings
             mMap.getUiSettings().setMyLocationButtonEnabled(false);
             //disable compass
             mMap.getUiSettings().setCompassEnabled(false);
@@ -409,7 +420,6 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
 
     private void updateUI(String status) {
 
-        TextView MSG_FINDING_RIDES = findViewById(R.id.msg_rider_offline);
         TextView MSG_RIDER_ONLINE = findViewById(R.id.msg_rider_online);
         TextView MSG_CONNECTED_TIME = findViewById(R.id.msg_time_connected);
         TextView CONNECTED_TIME = findViewById(R.id.tv_time_connected);
@@ -422,17 +432,16 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
             case "online":
 
                 //update buttons and textViews
-                MSG_FINDING_RIDES.setVisibility(View.INVISIBLE);
                 MSG_RIDER_ONLINE.setVisibility(View.VISIBLE);
                 MSG_CONNECTED_TIME.setVisibility(View.VISIBLE);
                 CONNECTED_TIME.setVisibility(View.VISIBLE);
-                goOffline.setVisibility(View.VISIBLE);
-                goOnline.setVisibility(View.INVISIBLE);
+                //goOnline.setVisibility(View.INVISIBLE);
+                //find trips for rider
+                findRiderTrips();
                 break;
 
             case "offline":
 
-                MSG_FINDING_RIDES.setVisibility(View.VISIBLE);
                 MSG_RIDER_ONLINE.setVisibility(View.INVISIBLE);
                 MSG_CONNECTED_TIME.setVisibility(View.INVISIBLE);
                 CONNECTED_TIME.setVisibility(View.INVISIBLE);
@@ -445,15 +454,17 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                 //hide buttons
                 goOnline.setVisibility(View.INVISIBLE);
                 goOffline.setVisibility(View.INVISIBLE);
+
                 //hide textViews
-                MSG_FINDING_RIDES.setVisibility(View.INVISIBLE);
                 MSG_RIDER_ONLINE.setVisibility(View.INVISIBLE);
                 MSG_CONNECTED_TIME.setVisibility(View.INVISIBLE);
                 CONNECTED_TIME.setVisibility(View.INVISIBLE);
+
                 //show textViews of support
                 MSG_OFFLINE.setVisibility(View.VISIBLE);
                 MSG_CONTACT_SUPPORT.setVisibility(View.VISIBLE);
                 relativeLayout.setBackgroundColor(Color.rgb(220, 53, 69));
+
                 //show alert dialog
                 NetworkErrorDialog dialog = new NetworkErrorDialog();
                 dialog.show(getSupportFragmentManager(), "NetworkErrorDialog");
@@ -466,6 +477,38 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
 
         }//end switch
     }//end method
+
+    private void findRiderTrips() {
+        Log.d(TAG, "findRiderTrips: finding trips..");
+        //set button state to loading
+        goOnline.showLoading();
+
+        //trip lookup in separate thread
+        Thread background = new Thread() {
+            public void run() {
+                try {
+                    // Thread will sleep for 3 seconds
+                    sleep(3000);
+
+                    // After 5 seconds redirect to another intent
+                    goOnline.hideLoading();
+                    goOnline.setText(R.string.online);
+                    startActivity(new Intent(PartnerDashboardMain.this , NewRestaurantTripRequest.class));
+                    //open anim
+                    overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+                    //set rider status
+                    RiderManager.setRiderConnected(true);
+
+                } catch (Exception e) {
+                    Log.e(TAG, "run: " + e.getMessage() );
+                }
+            }//run
+        };
+
+        // start thread
+        background.start();
+
+    }//end findTrips
 
     public void addMapMarker() {
         Log.d(TAG, "addMapMarker: trying to add marker");

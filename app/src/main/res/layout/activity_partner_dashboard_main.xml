@@ -49,16 +49,16 @@
                 android:layout_height="80dp"
                 android:padding="12dp">
 
-                <TextView
-                    android:id="@+id/msg_rider_offline"
-                    style="@style/BlackPoppinsRegular"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:padding="6dp"
-                    android:text="@string/finding_trips"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                <!--                <TextView-->
+                <!--                    android:id="@+id/msg_rider_offline"-->
+                <!--                    style="@style/BlackPoppinsRegular"-->
+                <!--                    android:layout_width="wrap_content"-->
+                <!--                    android:layout_height="wrap_content"-->
+                <!--                    android:layout_centerVertical="true"-->
+                <!--                    android:padding="6dp"-->
+                <!--                    android:text="@string/finding_trips"-->
+                <!--                    android:textSize="20sp"-->
+                <!--                    android:textStyle="bold" />-->
 
                 <!-- when unable to go online !-->
                 <TextView
@@ -100,7 +100,7 @@
                     android:textStyle="bold"
                     android:visibility="invisible" />
 
-                <Button
+                <com.kusu.loadingbutton.LoadingButton
                     android:id="@+id/btn_go_online"
                     style="@style/BlackPoppinsRegular"
                     android:layout_width="150dp"
@@ -108,11 +108,35 @@
                     android:layout_alignParentEnd="true"
                     android:layout_alignParentRight="true"
                     android:layout_centerVertical="true"
+                    android:paddingTop="3dp"
+                    android:textStyle="bold"
                     android:background="@drawable/btn_round_rect"
                     android:text="@string/go_online"
                     android:textAllCaps="false"
                     android:textColor="@android:color/white"
-                    android:textStyle="bold" />
+                    app:lb_buttonColor="@color/appThemeColor"
+                    app:lb_isShadowEnable="false"
+                    app:lb_loaderColor="@android:color/white"/>
+
+<!--                <layout-->
+<!--                ...-->
+<!--                <com.kusu.loadingbutton.LoadingButton-->
+<!--                    android:id="@+id/loadingButton"-->
+<!--                    android:layout_width="200dp"-->
+<!--                    android:layout_height="51dp"-->
+<!--                    android:layout_marginTop="20dp"-->
+<!--                    android:paddingLeft="10dp"-->
+<!--                    android:paddingRight="10dp"-->
+<!--                    android:text="Shadow World!"-->
+<!--                    android:textColor="@color/white"-->
+<!--                    app:lb_buttonColor="@color/colorPrimary"-->
+<!--                    app:lb_isShadowEnable="true"-->
+<!--                    app:lb_isCircular="true"-->
+<!--                    app:lb_loaderColor="@color/colorAccent"-->
+<!--                    app:lb_shadowColor="@color/colorPrimaryDark"-->
+<!--                    app:lb_shadowHeight="5dp" />-->
+<!--                ...-->
+<!--            </layout>-->
 
                 <Button
                     android:id="@+id/btn_go_offline"
@@ -128,16 +152,6 @@
                     android:textColor="@android:color/white"
                     android:textStyle="bold"
                     android:visibility="invisible" />
-
-                <ProgressBar
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_alignParentRight="true"
-                    android:layout_centerVertical="true"
-                    android:layout_marginEnd="50dp"
-                    android:layout_marginRight="50dp"
-                    android:indeterminate="true" />
 
                 <TextView
                     android:id="@+id/msg_time_connected"
@@ -186,11 +200,12 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
             android:layout_centerHorizontal="true"
             android:fontFamily="@font/poppins_regular"
             android:lines="1"
             android:text="$38.76"
-            android:layout_centerInParent="true"
+            android:paddingTop="6dp"
             android:textColor="@android:color/white"
             android:textSize="22sp"
             android:textStyle="bold" />
