@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".UIViews.GoToPickupLocation">
+
+   <!-- top app bar !-->
+   <RelativeLayout
+       android:id="@+id/relativeLayout"
+       android:layout_width="0dp"
+       android:layout_height="?attr/actionBarSize"
+       android:background="@android:color/white"
+       android:padding="10dp"
+       app:layout_constraintEnd_toEndOf="parent"
+       app:layout_constraintStart_toStartOf="parent"
+       app:layout_constraintTop_toTopOf="parent">
+
+      <ImageView
+          android:id="@+id/nav_back_to_login"
+          android:layout_width="32dp"
+          android:layout_height="32dp"
+          android:layout_alignParentStart="true"
+          android:layout_alignParentLeft="true"
+          android:layout_centerVertical="true"
+          android:src="@drawable/hamburger_icon" />
+
+      <TextView
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_centerInParent="true"
+          android:fontFamily="@font/poppins_semi_bold"
+          android:text="@string/go_to_pickup"
+          android:textColor="@android:color/black"
+          android:textSize="16sp" />
+
+      <ImageButton
+          android:id="@+id/img_btn_phone"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_alignParentEnd="true"
+          android:layout_centerVertical="true"
+          android:background="@android:color/transparent"
+          android:src="@drawable/ic_help" />
+
+      <ImageButton
+          android:id="@+id/img_btn_call"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_centerVertical="true"
+          android:layout_marginEnd="8dp"
+          android:layout_toStartOf="@+id/img_btn_phone"
+          android:background="@android:color/transparent"
+          android:src="@drawable/ic_call" />
+
+   </RelativeLayout>
+   <!-- top app bar !-->
+
+   <!-- map fragment !-->
+
+   <fragment
+       android:id="@+id/map_pickup_location"
+       android:name="com.google.android.gms.maps.SupportMapFragment"
+       android:layout_width="0dp"
+       android:layout_height="0dp"
+       app:layout_constraintBottom_toTopOf="@+id/tableLayout2"
+       app:layout_constraintEnd_toEndOf="parent"
+       app:layout_constraintStart_toStartOf="parent"
+       app:layout_constraintTop_toBottomOf="@+id/relativeLayout"
+       tools:context=".UIViews.GoToPickupLocation" />
+
+   <!-- Bottom Card !-->
+
+   <TableLayout
+       android:id="@+id/tableLayout2"
+       android:layout_width="0dp"
+       android:layout_height="180dp"
+       android:layout_marginStart="6dp"
+       android:layout_marginEnd="6dp"
+       android:background="@drawable/card_bg_round"
+       android:stretchColumns="0"
+       app:layout_constraintBottom_toBottomOf="parent"
+       app:layout_constraintEnd_toEndOf="parent"
+       app:layout_constraintStart_toStartOf="parent">
+
+
+      <TableRow
+          android:layout_width="match_parent"
+          android:layout_height="match_parent">
+
+         <RelativeLayout
+             android:layout_width="match_parent"
+             android:layout_height="match_parent"
+             android:layout_marginTop="12dp"
+             android:padding="6dp">
+
+            <TextView
+                android:id="@+id/tv_est_minutes"
+                style="@style/BlackPoppinsRegular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:text="8 minutes"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/div1"
+                style="@style/BlackPoppinsRegular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_toEndOf="@+id/tv_est_minutes"
+                android:text="."
+                android:textColor="@android:color/darker_gray"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_est_distance"
+                style="@style/BlackPoppinsRegular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_toEndOf="@+id/div1"
+                android:text="1.7 miles"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tv_goto_restaurant_name"
+                style="@style/BlackPoppinsRegular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tv_est_minutes"
+                android:layout_marginStart="6dp"
+                android:text="Hardees"
+                android:textSize="22sp" />
+
+            <TextView
+                android:id="@+id/tv_goto_restaurant_address"
+                style="@style/BlackPoppinsRegular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tv_goto_restaurant_name"
+                android:layout_marginStart="6dp"
+                android:text="A-55 Block A, North Nazimabad Karachi"
+                android:textColor="@android:color/darker_gray" />
+
+            <Button
+                android:id="@+id/btn_rider_accept_restaurant_order"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:layout_below="@+id/tv_goto_restaurant_address"
+                android:layout_alignStart="@+id/tv_goto_restaurant_name"
+                android:layout_alignParentEnd="true"
+                android:layout_marginTop="12dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/btn_round_rect"
+                android:fontFamily="@font/poppins_regular"
+                android:shadowColor="@android:color/transparent"
+                android:text="@string/see_delivery_information"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+
+         </RelativeLayout>
+
+      </TableRow>
+   </TableLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

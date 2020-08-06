@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.location.Location;
@@ -44,6 +45,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -62,10 +64,9 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
     private static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
     private static final float DEFAULT_ZOOM = 15.5f;
+    MediaPlayer player;
     private LatLng userCoordinates;
     private boolean mLocationPermissionGranted = false;
-    MediaPlayer player;
-
     //UI Views
     private LoadingButton goOnline;
     private Button goOffline;
@@ -179,22 +180,27 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
         try {
-            if (mLocationPermissionGranted) {
+            if (mLocationPermissionGranted && isGpsOk()) {
                 Task<Location> locationResult = mFusedLocationProviderClient.getLastLocation();
                 locationResult.addOnCompleteListener(new OnCompleteListener<Location>() {
                     @Override
-                    public void onComplete(@NonNull Task task) {
+                    public void onComplete(@NonNull Task<Location> task) {
                         if (task.isSuccessful()) {
                             Log.d(TAG, "onComplete: location found!");
-                            Location currentLocation = (Location) task.getResult();
+                            Location currentLocation = task.getResult();
 
                             //after getting current location , move camera to current device location
-                            userCoordinates = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                            if (currentLocation != null) {
+                                //get lat lng
+                                userCoordinates = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
 
-                            if (isNetworkOk() && userCoordinates != null) {
-                                moveCamera(userCoordinates);
+                                if (isNetworkOk() && userCoordinates != null) {
+                                    moveCamera(userCoordinates);
+                                } else {
+                                    Toast.makeText(PartnerDashboardMain.this, "Network error, try again", Toast.LENGTH_SHORT).show();
+                                }
                             } else {
-                                Toast.makeText(PartnerDashboardMain.this, "Network error, try again", Toast.LENGTH_SHORT).show();
+                                Log.d(TAG, "onComplete: current location is null !!");
                             }
                         } else {
                             Log.d(TAG, "onComplete: location not found!");
@@ -232,21 +238,27 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                 userCoordinates = null;
 
                 Task<Location> locationResult = mFusedLocationProviderClient.getLastLocation();
+
                 locationResult.addOnCompleteListener(new OnCompleteListener<Location>() {
                     @Override
                     public void onComplete(@NonNull Task task) {
                         if (task.isSuccessful()) {
                             Log.d(TAG, "onComplete: location found!");
+                            //user location
                             Location currentLocation = (Location) task.getResult();
 
                             //after getting current location , move camera to current device location
                             userCoordinates = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                            //move
+                            mMap.moveCamera(CameraUpdateFactory.zoomTo(14.5f));
+                            //animate
                             mMap.animateCamera(
                                     CameraUpdateFactory.newLatLngZoom(
                                             userCoordinates,
-                                            14.5f
+                                            15f
                                     )
                             );
+
                         } else {
                             Log.d(TAG, "onComplete: location not found!");
                             Toast.makeText(PartnerDashboardMain.this, "Unable to find current location !", Toast.LENGTH_SHORT).show();
@@ -353,6 +365,22 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
 
         //..
         if (mLocationPermissionGranted) {
+
+            try {
+                // Customise the styling of the base map using a JSON object defined
+                // in a raw resource file.
+                boolean success = googleMap.setMapStyle(
+                        MapStyleOptions.loadRawResourceStyle(
+                                this, R.raw.map_style_silver));
+                Log.d(TAG, "onMapReady: map style silver added...");
+
+                if (!success) {
+                    Log.d(TAG, "onMapReady: styling failed..");
+                }
+            } catch (Resources.NotFoundException e) {
+                Log.e(TAG, "Can't find style. Error: ", e);
+            }// end try/catch
+
             getDeviceLocation();
 
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -527,8 +555,8 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
 
             if (Build.VERSION.SDK_INT >= 26) {
                 //vibrate
-                vibe.vibrate(VibrationEffect.createOneShot(millis , VibrationEffect.DEFAULT_AMPLITUDE));
-                player = MediaPlayer.create(this , R.raw.swiftly);
+                vibe.vibrate(VibrationEffect.createOneShot(millis, VibrationEffect.DEFAULT_AMPLITUDE));
+                player = MediaPlayer.create(this, R.raw.swiftly);
                 //sound
                 player.start();
                 //release player
@@ -540,7 +568,7 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                     }
                 });
             } else {
-                player = MediaPlayer.create(this , R.raw.swiftly);
+                player = MediaPlayer.create(this, R.raw.swiftly);
                 //sound
                 player.start();
                 //release player

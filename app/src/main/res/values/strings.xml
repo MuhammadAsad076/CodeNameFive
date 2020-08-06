@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">CodeNameFive</string>
-    <string name="login_head">Login to your partner account</string>
+    <string name="login_head" translatable="false">Login to your partner account</string>
     <string name="todo">TODO</string>
     <string name="enter_phone_number_or_email">Enter phone number or email</string>
     <string name="btn_confirm">Continue</string>
@@ -78,5 +78,7 @@
     <string name="new_trip_request">New trip request</string>
     <string name="str_reject">Reject</string>
     <string name="online">Online</string>
+    <string name="go_to_pickup">Go to pickup</string>
+    <string name="see_delivery_information">See delivery information</string>
 
 </resources>
