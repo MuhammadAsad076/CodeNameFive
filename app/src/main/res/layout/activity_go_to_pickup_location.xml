@@ -173,4 +173,24 @@
       </TableRow>
    </TableLayout>
 
+   <RelativeLayout
+       android:id="@+id/rel_lay_recenter"
+       android:layout_width="52dp"
+       android:layout_height="52dp"
+       android:layout_margin="22dp"
+       android:background="@drawable/fab_round_white"
+       android:elevation="6dp"
+       app:layout_constraintBottom_toBottomOf="@+id/map_pickup_location"
+       app:layout_constraintEnd_toEndOf="parent">
+
+      <ImageButton
+          android:id="@+id/imgBtn_recenter_pickup"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_centerInParent="true"
+          android:background="@android:color/transparent"
+          android:src="@drawable/recenter_gps" />
+
+   </RelativeLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -80,5 +80,9 @@
     <string name="online">Online</string>
     <string name="go_to_pickup">Go to pickup</string>
     <string name="see_delivery_information">See delivery information</string>
+   <string name="def_min">0 Minutes</string>
+    <string name="def_dist">0 Miles</string>
+   <string name="trip_mins">\" minutes\"</string>
+    <string name="trip_km">\" km\"</string>
 
 </resources>
