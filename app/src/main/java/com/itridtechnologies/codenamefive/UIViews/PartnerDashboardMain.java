@@ -17,8 +17,6 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
-import android.media.AudioAttributes;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -51,10 +49,14 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.maps.android.ui.IconGenerator;
 import com.itridtechnologies.codenamefive.R;
-import com.itridtechnologies.codenamefive.utils.NetworkConnectionState;
+import com.itridtechnologies.codenamefive.utils.MapMarkerGenerator;
 import com.itridtechnologies.codenamefive.utils.NetworkErrorDialog;
 import com.itridtechnologies.codenamefive.utils.RiderManager;
 import com.kusu.loadingbutton.LoadingButton;
+
+import static com.itridtechnologies.codenamefive.utils.MapMarkerGenerator.getMarkerIcon;
+import static com.itridtechnologies.codenamefive.utils.NetworkConnectionState.isNetworkConnected;
+import static com.itridtechnologies.codenamefive.utils.RiderManager.setRiderConnected;
 
 public class PartnerDashboardMain extends AppCompatActivity implements OnMapReadyCallback, View.OnClickListener {
 
@@ -420,7 +422,7 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
         switch (v.getId()) {
 
             case R.id.btn_go_online:
-                if (NetworkConnectionState.isNetworkConnected(this)) {
+                if (isNetworkConnected(this)) {
                     updateUI("online");
                 } else {
                     updateUI("networkError");
@@ -474,6 +476,7 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                 //show go offline button
                 goOffline.setVisibility(View.INVISIBLE);
                 goOnline.setVisibility(View.VISIBLE);
+                setRiderConnected(false);
                 break;
 
             case "networkError":
@@ -526,14 +529,18 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                     public void run() {
                         // After 3 seconds redirect to another intent
                         goOnline.hideLoading();
-                        goOnline.setText(R.string.online);
+                        goOnline.setButtonText("Online");
+                        goOnline.setVisibility(View.INVISIBLE);
+                        goOffline.setVisibility(View.VISIBLE);
+
                         startActivity(new Intent(PartnerDashboardMain.this, NewRestaurantTripRequest.class));
+
                         //open anim
                         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
                         //sound and vibration feedback
-                        createVibeAlertWithSound(500);
+                        createVibeAlertWithSound();
                         //set rider status
-                        RiderManager.setRiderConnected(true);
+                        setRiderConnected(true);
                         Log.d(TAG, "run: trip found");
                     }
                 });// UI Thread
@@ -545,7 +552,7 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
 
     }//end findTrips
 
-    private void createVibeAlertWithSound(int millis) {
+    private void createVibeAlertWithSound() {
         Log.d(TAG, "createVibeAlertWithSound: trying to give haptic feedback...");
         //init vibe
         Vibrator vibe = (Vibrator) getSystemService(VIBRATOR_SERVICE);
@@ -555,7 +562,7 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
 
             if (Build.VERSION.SDK_INT >= 26) {
                 //vibrate
-                vibe.vibrate(VibrationEffect.createOneShot(millis, VibrationEffect.DEFAULT_AMPLITUDE));
+                vibe.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE));
                 player = MediaPlayer.create(this, R.raw.swiftly);
                 //sound
                 player.start();
@@ -579,7 +586,7 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                         player = null;
                     }
                 });
-                vibe.vibrate(millis);
+                vibe.vibrate(500);
             }
         }//end if
 
@@ -588,19 +595,7 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
     public void addMapMarker() {
         Log.d(TAG, "addMapMarker: trying to add marker");
 
-        ImageView imageView;
-        IconGenerator iconGenerator;
-
-        imageView = new ImageView(this);
-        iconGenerator = new IconGenerator(this);
-
-        imageView.setImageResource(R.drawable.map_pin_customer);
-        imageView.setLayoutParams(new ViewGroup.LayoutParams(128, 128));
-        //imageView.setPadding(4, 4, 4, 4);
-        iconGenerator.setContentView(imageView);
-        iconGenerator.setBackground(null);
-
-        Bitmap icon = iconGenerator.makeIcon();
+        Bitmap icon = getMarkerIcon(this, R.drawable.map_pin_customer);
 
         MarkerOptions options = new MarkerOptions()
                 .title("Me")

@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#cdd0d4"
     tools:context=".UIViews.NewRestaurantTripRequest">
 
     <!-- top app bar !-->
@@ -53,7 +54,7 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/tableLayout3"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
@@ -61,19 +62,14 @@
         tools:context=".UIViews.NewRestaurantTripRequest" />
 
     <TableLayout
+        android:id="@+id/tableLayout3"
         android:layout_width="0dp"
         android:layout_height="180dp"
-        android:layout_marginStart="12dp"
-        android:layout_marginLeft="12dp"
-        android:layout_marginEnd="12dp"
-        android:layout_marginRight="12dp"
-        android:layout_marginBottom="20dp"
         android:background="@drawable/card_bg_round"
         android:stretchColumns="0"
-        android:weightSum="100"
-        app:layout_constraintBottom_toBottomOf="@+id/map_trip_request"
-        app:layout_constraintEnd_toEndOf="@+id/map_trip_request"
-        app:layout_constraintStart_toStartOf="@+id/map_trip_request">
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
         <TableRow
             android:layout_width="match_parent"
@@ -82,10 +78,10 @@
 
             <ProgressBar
                 style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-                android:layout_height="match_parent"
                 android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:background="@android:color/transparent"
-                android:indeterminate="true"/>
+                android:indeterminate="true" />
 
         </TableRow>
 
@@ -191,6 +187,26 @@
             android:textColor="@android:color/white"
             android:textSize="22sp"
             android:textStyle="bold" />
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/rel_lay_recenter_markers"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_margin="22dp"
+        android:background="@drawable/fab_round_white"
+        android:elevation="6dp"
+        app:layout_constraintBottom_toBottomOf="@+id/map_trip_request"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageButton
+            android:id="@+id/imgBtn_recenter_markers"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:background="@android:color/transparent"
+            android:src="@drawable/recenter_gps" />
 
     </RelativeLayout>
 
