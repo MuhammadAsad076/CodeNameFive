@@ -36,6 +36,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -60,25 +61,27 @@ import static com.itridtechnologies.codenamefive.utils.RiderManager.setRiderConn
 
 public class PartnerDashboardMain extends AppCompatActivity implements OnMapReadyCallback, View.OnClickListener {
 
+    //const
     private static final String TAG = "PartnerDashboardMain";
-
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
     private static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
     private static final float DEFAULT_ZOOM = 15.5f;
-    MediaPlayer player;
-    private LatLng userCoordinates;
-    private boolean mLocationPermissionGranted = false;
+
     //UI Views
     private LoadingButton goOnline;
     private Button goOffline;
     private RelativeLayout relativeLayoutGps;
-
-    private GoogleMap mMap;
-    private FusedLocationProviderClient mFusedLocationProviderClient;
-
     private ImageButton partnerAppMenu;
     private ImageButton recenterGps;
+
+    //vars
+    private GoogleMap mMap;
+    private FusedLocationProviderClient mFusedLocationProviderClient;
+    MediaPlayer player;
+    private LatLng userCoordinates;
+    private boolean mLocationPermissionGranted = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -227,8 +230,6 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
                         DEFAULT_ZOOM)
         );
         mMap.animateCamera(CameraUpdateFactory.zoomTo(15f));
-        //add marker to map
-        addMapMarker();
     }//end moveCamera
 
     private void animateCameraToCurrentLocation() {
@@ -591,20 +592,6 @@ public class PartnerDashboardMain extends AppCompatActivity implements OnMapRead
         }//end if
 
     }//end vibration
-
-    public void addMapMarker() {
-        Log.d(TAG, "addMapMarker: trying to add marker");
-
-        Bitmap icon = getMarkerIcon(this, R.drawable.map_pin_customer);
-
-        MarkerOptions options = new MarkerOptions()
-                .title("Me")
-                .icon(BitmapDescriptorFactory.fromBitmap(icon))
-                .position(new LatLng(31.519123, 74.344939));
-
-
-        mMap.addMarker(options);
-    }//end addMarker
 
     //public methods________________________________________________________________________________
 

@@ -134,8 +134,8 @@ public class NewRestaurantTripRequest extends AppCompatActivity implements OnMap
     public void addMapMarkers() {
         Log.d(TAG, "addMapMarker: trying to add marker");
 
-        Bitmap iconCustomer = getMarkerIcon(this , R.drawable.map_pin_customer);
-        Bitmap iconRestaurant = getMarkerIcon(this , R.drawable.map_pin_pickup);
+        Bitmap iconCustomer = getMarkerIcon(this , R.drawable.map_pin_destination);
+        Bitmap iconRestaurant = getMarkerIcon(this , R.drawable.map_pin_restaurant);
 
         MarkerOptions CMO = new MarkerOptions()
                 .title("Destination")

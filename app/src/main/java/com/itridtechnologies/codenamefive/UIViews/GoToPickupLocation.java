@@ -28,6 +28,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -55,6 +56,7 @@ import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
 import com.itridtechnologies.codenamefive.Models.PolyLinesData;
 import com.itridtechnologies.codenamefive.R;
+import com.itridtechnologies.codenamefive.utils.MapMarkerGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -310,23 +312,29 @@ public class GoToPickupLocation extends AppCompatActivity implements
         double topBounds;
         double topRightBounds;
 
-        bottomBounds = restaurant.lat - 00.003500;
-        bottomLeftBounds = restaurant.lng - 00.003500;
+        bottomBounds = restaurant.lat;
+        bottomLeftBounds = restaurant.lng;
 
-        topBounds = rider.lat + 00.003500;
-        topRightBounds = rider.lng + 00.003500;
+        topBounds = rider.lat;
+        topRightBounds = rider.lng;
 
-        //set the boundary
-        mMapFocusArea = new LatLngBounds(
-                new LatLng(bottomBounds, bottomLeftBounds),
-                new LatLng(topBounds, topRightBounds)
-        );
+        if (restaurant.lat > rider.lat) {
+            Log.d(TAG, "setCameraViewWindow: southern latitude exceeds northern latitude: "+restaurant.lat+" <><><>"+rider.lat);
 
-        Log.d(TAG, "setCameraViewWindow: northeast: " + mMapFocusArea.northeast + ">>> southwest: " + mMapFocusArea.southwest);
+            //set the boundary
+            mMapFocusArea = new LatLngBounds(
+                    new LatLng(topBounds, topRightBounds),
+                    new LatLng(bottomBounds, bottomLeftBounds)
+            );
+        } else {
+            //set the boundary
+            mMapFocusArea = new LatLngBounds(
+                    new LatLng(bottomBounds, bottomLeftBounds),
+                    new LatLng(topBounds, topRightBounds)
+            );
+        }
 
-        mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(mMapFocusArea, 0));
-        //mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(mMapFocusArea.getCenter() , 12.5f));
-        mMap.setLatLngBoundsForCameraTarget(mMapFocusArea);
+        recenterPickupLocation();
 
         //add marker to map
         addMapMarker();
@@ -336,32 +344,22 @@ public class GoToPickupLocation extends AppCompatActivity implements
     private void recenterPickupLocation() {
 
         mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(mMapFocusArea, 0));
-        //mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(mMapFocusArea.getCenter() , 12.5f));
+        mMap.setLatLngBoundsForCameraTarget(mMapFocusArea);
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(mMapFocusArea.getCenter() , 13.2f));
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition(mMapFocusArea.getCenter(), 13.2f,0,0)));
 
     }// end recenter
 
     public void addMapMarker() {
         Log.d(TAG, "addMapMarker: trying to add marker" + restaurantCoordinates.toString());
 
-        ImageView imageView;
-        IconGenerator iconGenerator;
-
-        imageView = new ImageView(this);
-        iconGenerator = new IconGenerator(this);
-
-        imageView.setImageResource(R.drawable.map_pin_pickup);
-        imageView.setLayoutParams(new ViewGroup.LayoutParams(72, 82));
-        //imageView.setPadding(4, 4, 4, 4);
-        iconGenerator.setContentView(imageView);
-        iconGenerator.setBackground(null);
-
-        Bitmap icon = iconGenerator.makeIcon();
+        Bitmap pickupMarker = MapMarkerGenerator.getMarkerIcon(this , R.drawable.map_pin_restaurant);
 
         LatLng pickup = new LatLng(restaurantCoordinates.lat, restaurantCoordinates.lng);
 
         MarkerOptions options = new MarkerOptions()
                 .title("Pickup")
-                .icon(BitmapDescriptorFactory.fromBitmap(icon))
+                .icon(BitmapDescriptorFactory.fromBitmap(pickupMarker))
                 .position(pickup);
 
         if (restaurantCoordinates != null) {
