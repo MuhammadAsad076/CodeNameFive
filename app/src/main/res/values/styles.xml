@@ -1,16 +1,46 @@
 <resources>
-    <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
-        <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">#12D2B3</item>
-        <item name="colorAccent">@color/colorAccent</item>
-    </style>
-    
-    <style name="BlackPoppinsRegular">
-        <item name="android:textColor">@android:color/black</item>
-        <item name="android:fontFamily">@font/poppins_regular</item>
-        <item name="android:textSize">16sp</item>
-    </style>
+   <!-- Base application theme. -->
+   <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+      <!-- Customize your theme here. -->
+      <item name="colorPrimary">@color/colorPrimary</item>
+      <item name="colorPrimaryDark">#12D2B3</item>
+      <item name="colorAccent">@color/colorAccent</item>
+   </style>
+
+   <style name="BlackPoppinsRegular">
+      <item name="android:textColor">@android:color/black</item>
+      <item name="android:fontFamily">@font/poppins_regular</item>
+      <item name="android:textSize">16sp</item>
+   </style>
+
+   <style name="TextMediumBlack">
+      <item name="android:textColor">@android:color/black</item>
+      <item name="android:fontFamily">@font/poppins_regular</item>
+      <item name="android:textSize">18sp</item>
+   </style>
+
+   <style name="TextEsmallGrey">
+      <item name="android:textColor">@android:color/darker_gray</item>
+      <item name="android:fontFamily">@font/poppins_regular</item>
+      <item name="android:textSize">14sp</item>
+   </style>
+
+   <style name="TextEsmallBlack">
+      <item name="android:textColor">@android:color/black</item>
+      <item name="android:fontFamily">@font/poppins_regular</item>
+      <item name="android:textSize">14sp</item>
+   </style>
+
+   <style name="TextLargeBlack">
+      <item name="android:textColor">@android:color/black</item>
+      <item name="android:fontFamily">@font/poppins_regular</item>
+      <item name="android:textSize">22sp</item>
+   </style>
+
+   <style name="TextSmallBlack">
+      <item name="android:textColor">@android:color/black</item>
+      <item name="android:fontFamily">@font/poppins_meduim</item>
+      <item name="android:textSize">16sp</item>
+   </style>
 
 </resources>

@@ -8,6 +8,8 @@
    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
    <uses-permission android:name="android.permission.VIBRATE" />
    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+   <uses-permission android:name="android.permission.CAMERA" />
 
    <application
        android:allowBackup="true"
@@ -16,9 +18,15 @@
        android:roundIcon="@mipmap/ic_launcher_round"
        android:supportsRtl="true"
        android:theme="@style/AppTheme">
+      <activity android:name=".UIViews.RegisterFirstStep">
+         <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+
+            <category android:name="android.intent.category.LAUNCHER" />
+         </intent-filter>
+      </activity>
       <activity android:name=".UIViews.GoToPickupLocation" />
-      <activity android:name=".UIViews.NewRestaurantTripRequest" />
-      <!-- Maps API key ! -->
+      <activity android:name=".UIViews.NewRestaurantTripRequest" /> <!-- Maps API key ! -->
       <!-- AIzaSyBMr4IQRIY5q4nfxP4I6LzpkyP08Ko1DU0 ! -->
       <meta-data
           android:name="com.google.android.geo.API_KEY"
@@ -45,11 +53,7 @@
       <activity android:name=".UIViews.PartnerLoginSecurityCode" />
       <activity android:name=".UIViews.PartnerLogin" />
       <activity android:name=".UIViews.MainActivity">
-         <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
 
-            <category android:name="android.intent.category.LAUNCHER" />
-         </intent-filter>
       </activity>
    </application>
 
