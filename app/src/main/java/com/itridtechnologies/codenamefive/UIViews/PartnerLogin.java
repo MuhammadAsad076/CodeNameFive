@@ -45,22 +45,19 @@ public class PartnerLogin extends AppCompatActivity {
         //...........................................................
         //LISTENERS
         //...........................................................
-        continuePartnerLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //inputValidationsMethod
-                validateInput();
-                if (inputOk) {
-                    partnerPhoneEmail.setError(null);
-                    Intent intent = new Intent(PartnerLogin.this, PartnerLoginSecurityCode.class);
-                    intent.putExtra("riderPhone", PARTNER_EMAIL_PHONE);
-                    intent.putExtra("keyboardType", keyboardType);
-                    startActivity(intent);
-                    finish();
-                    //open anim
-                    overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
-                }//end if
-            }
+        continuePartnerLogin.setOnClickListener(v -> {
+            //inputValidationsMethod
+            validateInput();
+            if (inputOk) {
+                partnerPhoneEmail.setError(null);
+                Intent intent = new Intent(PartnerLogin.this, PartnerLoginSecurityCode.class);
+                intent.putExtra("riderPhone", PARTNER_EMAIL_PHONE);
+                intent.putExtra("keyboardType", keyboardType);
+                startActivity(intent);
+                finish();
+                //open anim
+                overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+            }//end if
         });
         //...........................................................
 

@@ -183,6 +183,7 @@
 
          <!-- row 4 -->
          <TableRow
+             android:id="@+id/row_change_photo"
              android:layout_width="match_parent"
              android:layout_height="wrap_content"
              android:background="@android:color/white">
@@ -194,10 +195,10 @@
                 android:padding="12dp"
                 tools:ignore="UseCompoundDrawables,UselessParent">
 
-               <ImageView
+               <de.hdodenhof.circleimageview.CircleImageView
                    android:id="@+id/img_profile_photo"
-                   android:layout_width="wrap_content"
-                   android:layout_height="wrap_content"
+                   android:layout_width="64dp"
+                   android:layout_height="64dp"
                    android:importantForAccessibility="no"
                    android:src="@drawable/icon_default_profile" />
 
@@ -233,6 +234,7 @@
              android:background="@android:color/white">
 
             <EditText
+                android:id="@+id/edt_first_name"
                 style="@style/TextEsmallGrey"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -263,6 +265,7 @@
              android:background="@android:color/white">
 
             <EditText
+                android:id="@+id/edt_last_name"
                 style="@style/TextEsmallGrey"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -293,6 +296,7 @@
              android:background="@android:color/white">
 
             <EditText
+                android:id="@+id/edt_email_address"
                 style="@style/TextEsmallGrey"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -323,6 +327,7 @@
              android:background="@android:color/white">
 
             <EditText
+                android:id="@+id/edt_password"
                 style="@style/TextEsmallGrey"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -353,6 +358,7 @@
              android:background="@android:color/white">
 
             <EditText
+                android:id="@+id/edt_phone_number"
                 style="@style/TextEsmallGrey"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -413,6 +419,7 @@
              android:background="@android:color/white">
 
             <com.santalu.maskara.widget.MaskEditText
+                android:id="@+id/edt_vehicle_number"
                 style="@style/TextEsmallGrey"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -443,6 +450,7 @@
              android:layout_height="wrap_content">
 
             <TextView
+                android:id="@+id/tv_input_error"
                 style="@style/TextEsmallBlack"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

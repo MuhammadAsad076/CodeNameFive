@@ -6,48 +6,77 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
 import android.Manifest;
-import android.content.DialogInterface;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.ImageView;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TableRow;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.itridtechnologies.codenamefive.Models.FirstRegisterStep;
 import com.itridtechnologies.codenamefive.R;
+import com.santalu.maskara.widget.MaskEditText;
 
-import java.net.URI;
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.regex.Pattern;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 public class RegisterFirstStep extends AppCompatActivity implements AdapterView.OnItemSelectedListener, View.OnClickListener {
 
     //constants
     private static final String TAG = "RegisterFirstStep";
-    private static final int PICK_IMAGE_REQUEST = 1;
-    private static final int GALLERY_PIC_REQUEST = 2;
+    private static final int PICK_IMAGE_REQUEST = 100;
+    private static final int GALLERY_PIC_REQUEST = 200;
     private static final String CAMERA_PERMISSION = Manifest.permission.CAMERA;
     private static final String READ_STORAGE = Manifest.permission.READ_EXTERNAL_STORAGE;
     private static final String WRITE_STORAGE = Manifest.permission.WRITE_EXTERNAL_STORAGE;
     private static final int PERMISSIONS_REQUEST_CODE = 1122;
+    //pattern password
+    private static final Pattern phoneNumPattern = Pattern.compile("^\\s*(?:\\+" +
+            "?(\\d{1,3}))?[-. (]*(\\d{3})[-. )]*(\\d{3})[-. ]*(\\d{4})(?: *x(\\d+))?\\s*$");
     private boolean mPermissionGranted = false;
-
     //ui views
     private Spinner mVehicleTypeSpinner;
     private TableRow mUploadPhotoRow;
-    private ImageView mUserPhoto;
+    private TableRow mChangePhotoRow;
+    private CircleImageView mUserPhoto;
+    private EditText mEditTextFirstName;
+    private EditText mEditTextLastName;
+    private EditText mEditTextEmail;
+    private EditText mEditTextPassword;
+    private EditText mEditTextPhone;
+    private Button mButtonContinueRegistration;
+    private MaskEditText mMaskEditTextVehicleNumber;
+    private TextView mTextViewError;
 
     //vars
     private Uri mImageUri;
+    private String mImageFilePath;
+    private String mSpinnerVehicleType;
+    private int INPUT_ERROR_CODE = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,10 +86,23 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         //find views
         mUploadPhotoRow = findViewById(R.id.row_upload_photo);
         mUserPhoto = findViewById(R.id.img_profile_photo);
+        mChangePhotoRow = findViewById(R.id.row_change_photo);
+        mTextViewError = findViewById(R.id.tv_input_error);
+        mButtonContinueRegistration = findViewById(R.id.btn_register_first_step);
+
+        //editText widgets reference
+        mEditTextFirstName = findViewById(R.id.edt_first_name);
+        mEditTextLastName = findViewById(R.id.edt_last_name);
+        mEditTextEmail = findViewById(R.id.edt_email_address);
+        mEditTextPassword = findViewById(R.id.edt_password);
+        mEditTextPhone = findViewById(R.id.edt_phone_number);
+        mMaskEditTextVehicleNumber = findViewById(R.id.edt_vehicle_number);
 
         //set listener
         mUploadPhotoRow.setOnClickListener(this);
+        mChangePhotoRow.setOnClickListener(this);
         mUserPhoto.setOnClickListener(this);
+        mButtonContinueRegistration.setOnClickListener(this);
 
     }//onCreate
 
@@ -160,15 +202,68 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
     }//reqPermissionResult
 
     private void openCamera() {
-        Intent intent = new Intent();
-        intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
-        startActivityForResult(intent, PICK_IMAGE_REQUEST);
-    }
+        Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+        if (cameraIntent.resolveActivity(getPackageManager()) != null) {
+
+            //try to create file from img path
+            File photoFile = null;
+            try {
+                photoFile = createImageFile();
+
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+
+            if (photoFile != null) {
+
+                mImageUri = FileProvider.getUriForFile(
+                        this,
+                        getApplicationContext().getPackageName() + ".provider",
+                        photoFile);
+                cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, mImageUri);
+                startActivityForResult(cameraIntent, PICK_IMAGE_REQUEST);
+            }
+        }//if
+    }//end openCam
 
     private void galleryAddPic() {
-        Intent mediaScanIntent = new Intent(Intent.ACTION_PICK , MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        mediaScanIntent.setType("image/*");
-        startActivityForResult(Intent.createChooser(mediaScanIntent , "Select File") , GALLERY_PIC_REQUEST);
+        Intent mediaScanIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        //mediaScanIntent.setType("image/*");
+        startActivityForResult(Intent.createChooser(mediaScanIntent, "Select File"), GALLERY_PIC_REQUEST);
+    }
+
+    private String getRealPathFromURI(Uri contentUri) {
+
+        Cursor cursor = getContentResolver().query(contentUri, null, null, null, null);
+        cursor.moveToFirst();
+        String document_id = cursor.getString(0);
+        document_id = document_id.substring(document_id.lastIndexOf(":") + 1);
+        cursor.close();
+
+        cursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null
+                , MediaStore.Images.Media._ID + " = ? ", new String[]{document_id}, null);
+        cursor.moveToFirst();
+        String path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
+        cursor.close();
+
+        return path;
+    }
+
+    private File createImageFile() throws IOException {
+        String timeStamp =
+                new SimpleDateFormat("yyyyMMdd_HHmmss",
+                        Locale.getDefault()).format(new Date());
+        String imageFileName = "IMG_" + timeStamp + "_";
+        File storageDir =
+                getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+
+        mImageFilePath = image.getAbsolutePath();
+        return image;
     }
 
     //file chooser request result
@@ -176,17 +271,24 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
+        if (requestCode == PICK_IMAGE_REQUEST) {
+            if (resultCode == RESULT_OK) {
 
-            mImageUri = data.getData();
-            //load image into imageView
-            mUserPhoto.setImageURI(mImageUri);
+                Log.d(TAG, "onActivityResult: image result...");
+                mUserPhoto.setImageURI(Uri.parse(mImageFilePath));
+                Toast.makeText(this, "Img saved at: " + mImageFilePath, Toast.LENGTH_SHORT).show();
+
+            } else if (resultCode == RESULT_CANCELED) {
+                Toast.makeText(this, "Operation cancelled !", Toast.LENGTH_SHORT).show();
+            }
 
         } else if (requestCode == GALLERY_PIC_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
 
             mImageUri = data.getData();
             //load image into imageView
             mUserPhoto.setImageURI(mImageUri);
+            mImageFilePath = getRealPathFromURI(mImageUri);
+            Log.d(TAG, "onActivityResult: actual gallery img path: " + getRealPathFromURI(mImageUri));
         }
     }
 
@@ -216,13 +318,14 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
 
     }//end spinner
 
-
     //override methods______________________________________________________________________________
 
     //spinner
     @Override
     public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-        Toast.makeText(this, adapterView.getItemAtPosition(i).toString(), Toast.LENGTH_SHORT).show();
+
+        mSpinnerVehicleType = adapterView.getItemAtPosition(i).toString();
+        Log.d(TAG, "onItemSelected: vehicle type: "+mSpinnerVehicleType);
     }
 
     @Override
@@ -238,11 +341,127 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         switch (view.getId()) {
 
             case R.id.row_upload_photo:
+            case R.id.row_change_photo:
                 requestCameraPermissions();
                 break;
 
+            case R.id.btn_register_first_step:
+                if (inputValidation()) {
+                    completeRegistrationStep();
+                } else {
+                    updateUIWithErrorCode(INPUT_ERROR_CODE);
+                }
+                break;
+
+            default:
+                throw new IllegalStateException("Unexpected value: " + view.getId());
         }//switch
 
     }//end click
+
+    private boolean inputValidation() {
+        Log.d(TAG, "inputValidation: validating input...");
+
+        if (mEditTextFirstName.getText().toString().trim().isEmpty()) {
+            INPUT_ERROR_CODE = 1;
+            return false;
+        } else if (mEditTextLastName.getText().toString().trim().isEmpty()) {
+            INPUT_ERROR_CODE = 2;
+            return false;
+        } else if (mEditTextEmail.getText().toString().trim().isEmpty() ||
+                !(Patterns.EMAIL_ADDRESS.matcher(mEditTextEmail.getText().toString().trim()).matches())) {
+            INPUT_ERROR_CODE = 3;
+            return false;
+        } else if (mEditTextPassword.getText().toString().trim().isEmpty()) {
+            INPUT_ERROR_CODE = 4;
+            return false;
+        } else if (mEditTextPhone.getText().toString().trim().isEmpty() ||
+                !phoneNumPattern.matcher(mEditTextPhone.getText().toString()).matches()) {
+            INPUT_ERROR_CODE = 5;
+            return false;
+        } else if (mMaskEditTextVehicleNumber.getUnMasked().trim().isEmpty()) {
+            INPUT_ERROR_CODE = 6;
+            return false;
+        } else if (mSpinnerVehicleType.equals("Select your vehicle type")) {
+            INPUT_ERROR_CODE = 7;
+            return false;
+        } else if (mImageFilePath == null) {
+            INPUT_ERROR_CODE = 8;
+            return false;
+        } else {
+            Log.d(TAG, "inputValidation: input validation success!");
+            //data is valid so save values
+            return true;
+        }
+
+    }//end validate
+
+    private void updateUIWithErrorCode(int errorCode) {
+
+        switch (errorCode) {
+
+            case 1:
+                mTextViewError.setText(R.string.error_first_name);
+                break;
+
+            case 2:
+                mTextViewError.setText(R.string.error_last_name);
+                break;
+
+            case 3:
+                mTextViewError.setText(R.string.error_email_address);
+                break;
+
+            case 4:
+                mTextViewError.setText(R.string.error_password);
+                break;
+
+            case 5:
+                mTextViewError.setText(R.string.error_phone_num);
+                break;
+
+            case 6:
+                mTextViewError.setText(R.string.error_vehicle_reg_num);
+                break;
+
+            case 7:
+                mTextViewError.setText(R.string.error_vehicle_type);
+                break;
+
+            case 8:
+                mTextViewError.setText(R.string.error_profile_pic);
+                break;
+
+            default:
+                throw new IllegalStateException("Unexpected value: " + errorCode);
+
+        }//switch
+
+    }//end update
+
+    private void completeRegistrationStep() {
+        Log.d(TAG, "completeRegistrationStep: completing registration ...");
+
+        //fetch values from input fields
+        String firstName = mEditTextFirstName.getText().toString().trim();
+        String lastName = mEditTextLastName.getText().toString().trim();
+        String email = mEditTextEmail.getText().toString().trim();
+        String password = mEditTextPassword.getText().toString().trim();
+        String phone = mEditTextPhone.getText().toString().trim();
+        String vehicleNum = mMaskEditTextVehicleNumber.getUnMasked();
+
+        //inset data to model
+        FirstRegisterStep register = new FirstRegisterStep(
+                firstName,
+                lastName,
+                email,
+                password,
+                phone,
+                vehicleNum,
+                mSpinnerVehicleType,
+                mImageFilePath
+        );
+        Log.d(TAG, "completeRegistrationStep: " + register.toString());
+    }//end register
 
 }//end class
