@@ -43,4 +43,15 @@
       <item name="android:textSize">16sp</item>
    </style>
 
+   <style name="SpinnerTextViewItem" parent="@android:style/Widget.TextView" >
+      <item name="android:textSize" >14sp</item>
+      <item name="android:fontFamily" >@font/poppins_regular</item>
+      <item name="android:textColor" >@android:color/darker_gray</item>
+   </style>
+
+   <style name="SpinnerCalendar">
+      <item name="android:calendarViewShown">false</item>
+      <item name="android:datePickerMode">spinner</item>
+   </style>
+
 </resources>

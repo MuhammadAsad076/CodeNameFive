@@ -9,7 +9,6 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -29,7 +28,7 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.itridtechnologies.codenamefive.Models.FirstRegisterStep;
+import com.itridtechnologies.codenamefive.Models.RegistrationModels.FirstRegisterStep;
 import com.itridtechnologies.codenamefive.R;
 import com.santalu.maskara.widget.MaskEditText;
 
@@ -308,10 +307,10 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         categories.add("Helicopter");
 
         // Creating adapter for spinner
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, categories);
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(this, R.layout.spinner_item, categories);
 
         // Drop down layout style - list view with radio button
-        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        dataAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
 
         // attaching data adapter to spinner
         mVehicleTypeSpinner.setAdapter(dataAdapter);

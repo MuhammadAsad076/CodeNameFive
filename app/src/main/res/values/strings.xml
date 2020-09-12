@@ -86,7 +86,8 @@
    <string name="trip_km">\" km\"</string>
    <string name="continue_reg">Continue</string>
    <string name="register_as_partner">Register as partner</string>
-   <string name="aply_partner">Apply to become a partner</string>
+   <string name="apply_as_partner">Apply to become a partner</string>
+   <string name="aply_partner">Things we need to check</string>
    <string name="personal_info">Enter your personal information</string>
    <string name="upload_photo">Upload your profile photo</string>
    <string name="change_profile_photo">Change profile photo</string>
@@ -107,6 +108,11 @@
    <string name="error_vehicle_type">Enter your vehicle type</string>
    <string name="error_vehicle_reg_num">Enter your vehicle registration number</string>
    <string name="error_profile_pic">Please upload a profile photo</string>
+   <string name="verify_identity">Enter your date of birth and address to verify your identity</string>
+   <string name="age_warning">You must be at least 18 years old to apply as partner</string>
+   <string name="address_line_1">Address line 1</string>
+   <string name="address_line_2">Address line 2</string>
+   <string name="date_of_birth">Date of birth</string>
    <!-- validation errors -->
 
 </resources>

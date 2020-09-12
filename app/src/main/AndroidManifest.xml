@@ -9,9 +9,7 @@
    <uses-permission android:name="android.permission.VIBRATE" />
    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-   <uses-permission android:name="android.permission.CAMERA" />
-
-   <!-- features request !-->
+   <uses-permission android:name="android.permission.CAMERA" /> <!-- features request ! -->
    <uses-feature
        android:name="android.hardware.camera"
        android:required="true" />
@@ -22,7 +20,6 @@
        android:name="android.hardware.camera.flash"
        android:required="false" />
 
-
    <application
        android:allowBackup="true"
        android:icon="@mipmap/ic_launcher"
@@ -30,6 +27,13 @@
        android:roundIcon="@mipmap/ic_launcher_round"
        android:supportsRtl="true"
        android:theme="@style/AppTheme">
+      <activity android:name=".UIViews.RegisterSecondStep">
+         <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+
+            <category android:name="android.intent.category.LAUNCHER" />
+         </intent-filter>
+      </activity>
 
       <provider
           android:name="androidx.core.content.FileProvider"
@@ -39,17 +43,9 @@
          <meta-data
              android:name="android.support.FILE_PROVIDER_PATHS"
              android:resource="@xml/file_paths" />
-
       </provider>
 
-      <activity android:name=".UIViews.RegisterFirstStep">
-         <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
-
-            <category android:name="android.intent.category.LAUNCHER" />
-         </intent-filter>
-      </activity>
-
+      <activity android:name=".UIViews.RegisterFirstStep"/>
       <activity android:name=".UIViews.GoToPickupLocation" />
       <activity android:name=".UIViews.NewRestaurantTripRequest" /> <!-- Maps API key ! -->
       <!-- AIzaSyBMr4IQRIY5q4nfxP4I6LzpkyP08Ko1DU0 ! -->
@@ -77,9 +73,7 @@
       <activity android:name=".UIViews.PartnerAppMenu" />
       <activity android:name=".UIViews.PartnerLoginSecurityCode" />
       <activity android:name=".UIViews.PartnerLogin" />
-      <activity android:name=".UIViews.MainActivity">
-
-      </activity>
+      <activity android:name=".UIViews.MainActivity"></activity>
    </application>
 
 </manifest>

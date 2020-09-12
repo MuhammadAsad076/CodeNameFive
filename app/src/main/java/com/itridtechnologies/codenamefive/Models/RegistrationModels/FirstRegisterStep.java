@@ -1,4 +1,4 @@
-package com.itridtechnologies.codenamefive.Models;
+package com.itridtechnologies.codenamefive.Models.RegistrationModels;
 
 public class FirstRegisterStep {
 
