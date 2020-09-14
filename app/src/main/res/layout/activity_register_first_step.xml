@@ -156,6 +156,17 @@
          </TableRow>
          <!-- row 2 -->
 
+         <TableRow
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content">
+
+            <View
+                android:layout_width="wrap_content"
+                android:layout_height="0.5dp"
+                android:background="@android:color/darker_gray" />
+
+         </TableRow>
+
          <!-- row 3 -->
          <TableRow
              android:id="@+id/row_upload_photo"
@@ -398,7 +409,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/edt_back_white"
-                android:padding="12dp"
+                android:padding="13dp"
                 android:textAlignment="textStart"
                 tools:listitem="spinner" />
 
@@ -418,8 +429,10 @@
 
          <!-- row 11-->
          <TableRow
+             android:id="@+id/row_vehicle_reg_num"
              android:layout_width="match_parent"
              android:layout_height="wrap_content"
+             android:visibility="gone"
              android:background="@android:color/white">
 
             <com.santalu.maskara.widget.MaskEditText

@@ -27,13 +27,7 @@
        android:roundIcon="@mipmap/ic_launcher_round"
        android:supportsRtl="true"
        android:theme="@style/AppTheme">
-      <activity android:name=".UIViews.RegisterSecondStep">
-         <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
-
-            <category android:name="android.intent.category.LAUNCHER" />
-         </intent-filter>
-      </activity>
+      <activity android:name=".UIViews.RegisterFinalStep"></activity>
 
       <provider
           android:name="androidx.core.content.FileProvider"
@@ -45,7 +39,14 @@
              android:resource="@xml/file_paths" />
       </provider>
 
-      <activity android:name=".UIViews.RegisterFirstStep"/>
+      <activity android:name=".UIViews.RegisterFirstStep" />
+      <activity android:name=".UIViews.RegisterSecondStep">
+         <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+
+            <category android:name="android.intent.category.LAUNCHER" />
+         </intent-filter>
+      </activity>
       <activity android:name=".UIViews.GoToPickupLocation" />
       <activity android:name=".UIViews.NewRestaurantTripRequest" /> <!-- Maps API key ! -->
       <!-- AIzaSyBMr4IQRIY5q4nfxP4I6LzpkyP08Ko1DU0 ! -->
@@ -73,7 +74,7 @@
       <activity android:name=".UIViews.PartnerAppMenu" />
       <activity android:name=".UIViews.PartnerLoginSecurityCode" />
       <activity android:name=".UIViews.PartnerLogin" />
-      <activity android:name=".UIViews.MainActivity"></activity>
+      <activity android:name=".UIViews.MainActivity" />
    </application>
 
 </manifest>

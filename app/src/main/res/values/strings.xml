@@ -113,6 +113,17 @@
    <string name="address_line_1">Address line 1</string>
    <string name="address_line_2">Address line 2</string>
    <string name="date_of_birth">Date of birth</string>
+   <string name="zip_code">Zip code</string>
+   <string name="error_message">Error message</string>
+   <!-- validation errors -->
+
+   <!-- validation errors -->
+   <string name="error_birth_date">Please select your date of birth</string>
+   <string name="error_country">Please select your country</string>
+   <string name="error_state">Please select your state</string>
+   <string name="error_city">Please select your city</string>
+   <string name="error_address">Please enter your address</string>
+   <string name="error_zip_code">Please enter your zip code</string>
    <!-- validation errors -->
 
 </resources>

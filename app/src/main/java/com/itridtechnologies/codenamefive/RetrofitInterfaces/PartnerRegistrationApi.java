@@ -1,5 +1,6 @@
 package com.itridtechnologies.codenamefive.RetrofitInterfaces;
 
+import com.itridtechnologies.codenamefive.Models.RegistrationModels.CityResponse;
 import com.itridtechnologies.codenamefive.Models.RegistrationModels.CountryResponse;
 import com.itridtechnologies.codenamefive.Models.RegistrationModels.StatesResponse;
 
@@ -14,5 +15,8 @@ public interface PartnerRegistrationApi {
 
     @GET("state/{id}")
     Call<StatesResponse> getAllStates(@Path("id") int stateId);
+
+    @GET("city/{id}")
+    Call<CityResponse> getAllCities(@Path("id") int cityId);
 
 }//end interface

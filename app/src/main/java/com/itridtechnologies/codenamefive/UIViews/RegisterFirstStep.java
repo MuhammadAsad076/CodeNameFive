@@ -61,6 +61,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
     private Spinner mVehicleTypeSpinner;
     private TableRow mUploadPhotoRow;
     private TableRow mChangePhotoRow;
+    private TableRow mTableRowVehicleRegNum;
     private CircleImageView mUserPhoto;
     private EditText mEditTextFirstName;
     private EditText mEditTextLastName;
@@ -74,7 +75,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
     //vars
     private Uri mImageUri;
     private String mImageFilePath;
-    private String mSpinnerVehicleType;
+    private int mVehicleId = 0;
     private int INPUT_ERROR_CODE = 0;
 
     @Override
@@ -86,6 +87,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         mUploadPhotoRow = findViewById(R.id.row_upload_photo);
         mUserPhoto = findViewById(R.id.img_profile_photo);
         mChangePhotoRow = findViewById(R.id.row_change_photo);
+        mTableRowVehicleRegNum = findViewById(R.id.row_vehicle_reg_num);
         mTextViewError = findViewById(R.id.tv_input_error);
         mButtonContinueRegistration = findViewById(R.id.btn_register_first_step);
 
@@ -135,9 +137,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
                 galleryAddPic();
             }
 
-        }).setNegativeButton("Cancel", (dialogInterface, i) -> {
-            dialogInterface.dismiss();
-        });
+        }).setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss());
 
         //build and create
         builder.create().show();
@@ -234,16 +234,25 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
     private String getRealPathFromURI(Uri contentUri) {
 
         Cursor cursor = getContentResolver().query(contentUri, null, null, null, null);
-        cursor.moveToFirst();
-        String document_id = cursor.getString(0);
-        document_id = document_id.substring(document_id.lastIndexOf(":") + 1);
-        cursor.close();
+        String path = "";
 
-        cursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null
-                , MediaStore.Images.Media._ID + " = ? ", new String[]{document_id}, null);
-        cursor.moveToFirst();
-        String path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
-        cursor.close();
+        if (cursor != null) {
+
+            cursor.moveToFirst();
+            String document_id = cursor.getString(0);
+            document_id = document_id.substring(document_id.lastIndexOf(":") + 1);
+            cursor.close();
+
+
+            cursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null
+                    , MediaStore.Images.Media._ID + " = ? ", new String[]{document_id}, null);
+
+            assert cursor != null;
+            cursor.moveToFirst();
+            path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
+            cursor.close();
+
+        }
 
         return path;
     }
@@ -302,9 +311,9 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         // Spinner Drop down elements
         List<String> categories = new ArrayList<>();
         categories.add("Select your vehicle type");
+        categories.add("Bicycle");
+        categories.add("Moped");
         categories.add("Car");
-        categories.add("Bike");
-        categories.add("Helicopter");
 
         // Creating adapter for spinner
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(this, R.layout.spinner_item, categories);
@@ -323,8 +332,16 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
     @Override
     public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
 
-        mSpinnerVehicleType = adapterView.getItemAtPosition(i).toString();
-        Log.d(TAG, "onItemSelected: vehicle type: "+mSpinnerVehicleType);
+        mVehicleId = (int) adapterView.getItemIdAtPosition(i);
+        Log.d(TAG, "onItemSelected: item name: "+adapterView.getItemAtPosition(i).toString()+
+                "\nitem id: "+mVehicleId);
+
+        //enable disable vehicle reg field
+        if (mVehicleId != 0 & mVehicleId != 1) {
+            mTableRowVehicleRegNum.setVisibility(View.VISIBLE);
+        } else {
+            mTableRowVehicleRegNum.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -381,7 +398,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         } else if (mMaskEditTextVehicleNumber.getUnMasked().trim().isEmpty()) {
             INPUT_ERROR_CODE = 6;
             return false;
-        } else if (mSpinnerVehicleType.equals("Select your vehicle type")) {
+        } else if (mVehicleId == 0) {
             INPUT_ERROR_CODE = 7;
             return false;
         } else if (mImageFilePath == null) {
@@ -449,18 +466,21 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         String phone = mEditTextPhone.getText().toString().trim();
         String vehicleNum = mMaskEditTextVehicleNumber.getUnMasked();
 
-        //inset data to model
-        FirstRegisterStep register = new FirstRegisterStep(
-                firstName,
-                lastName,
-                email,
-                password,
-                phone,
-                vehicleNum,
-                mSpinnerVehicleType,
-                mImageFilePath
-        );
-        Log.d(TAG, "completeRegistrationStep: " + register.toString());
+        if (mVehicleId != 1) {
+
+            //inset data to model
+            FirstRegisterStep register = new FirstRegisterStep(
+                    firstName,
+                    lastName,
+                    email,
+                    password,
+                    phone,
+                    vehicleNum,
+                    String.valueOf(mVehicleId),
+                    mImageFilePath
+            );
+            Log.d(TAG, "completeRegistrationStep: " + register.toString());
+        }
     }//end register
 
 }//end class

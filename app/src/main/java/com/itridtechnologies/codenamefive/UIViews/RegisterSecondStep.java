@@ -10,7 +10,6 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.InputType;
@@ -18,12 +17,19 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
+import android.widget.TextView;
 
+import com.itridtechnologies.codenamefive.Const.Constants;
+import com.itridtechnologies.codenamefive.Models.RegistrationModels.Cities;
+import com.itridtechnologies.codenamefive.Models.RegistrationModels.CityResponse;
 import com.itridtechnologies.codenamefive.Models.RegistrationModels.Countries;
 import com.itridtechnologies.codenamefive.Models.RegistrationModels.CountryResponse;
+import com.itridtechnologies.codenamefive.Models.RegistrationModels.SecondRegisterStep;
 import com.itridtechnologies.codenamefive.Models.RegistrationModels.States;
 import com.itridtechnologies.codenamefive.Models.RegistrationModels.StatesResponse;
 import com.itridtechnologies.codenamefive.R;
@@ -43,7 +49,7 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
 
     //constants
     private static final String TAG = "RegisterSecondStep";
-    private static final String BASE_URL = "http://ec2-18-222-200-202.us-east-2.compute.amazonaws.com:3000/api/v1/";
+
     //vars
     PartnerRegistrationApi mPartnerRegistrationApi;
     //ui views
@@ -52,6 +58,12 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
     private ProgressBar mProgressBar;
     private Spinner mSpinnerCountries;
     private Spinner mSpinnerStates;
+    private Spinner mSpinnerCities;
+    private Button mButtonContinueRegistration;
+    private EditText mEditTextZipCode;
+    private EditText mEditTextAddressLine1;
+    private EditText mEditTextAddressLine2;
+    private TextView mTextViewError;
 
     private List<Countries> mCountries;
     private List<String> mCountryNames;
@@ -59,8 +71,14 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
     private List<States> mStates;
     private List<String> mStateNames;
 
+    private List<Cities> mCities;
+    private List<String> mCityNames;
+
     private int mCountryId = 0;
     private int mStateId = 0;
+    private int mCityId = 0;
+    private String mDate;
+    private int INPUT_ERROR_CODE = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,20 +89,29 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
         mEditTextBirthDate = findViewById(R.id.edt_date_of_birth);
         mSpinnerCountries = findViewById(R.id.spinner_countries);
         mSpinnerStates = findViewById(R.id.spinner_states);
+        mSpinnerCities = findViewById(R.id.spinner_cities);
         mProgressBar = findViewById(R.id.progress_bar);
+        mEditTextZipCode = findViewById(R.id.edt_zip_code);
+        mEditTextAddressLine1 = findViewById(R.id.edt_address_line_1);
+        mEditTextAddressLine2 = findViewById(R.id.edt_address_line_2);
+        mTextViewError = findViewById(R.id.tv_error_msg);
+        mButtonContinueRegistration = findViewById(R.id.btn_register_second_step);
 
         //setting styles
         mEditTextBirthDate.setInputType(InputType.TYPE_NULL);
         mStateNames = new ArrayList<>();
+        mCityNames = new ArrayList<>();
 
         //set listeners
         mEditTextBirthDate.setOnClickListener(this);
+        //button listener
+        mButtonContinueRegistration.setOnClickListener(this);
 
-        String s;
-        //date set listener
-        mOnDateSetListener = (datePicker, i, i1, i2) ->
-        mEditTextBirthDate.setText(String.format("%d-%d-%d", i, i1, i2)
-        );
+        mOnDateSetListener = (view, year, month, dayOfMonth) -> {
+            mDate = dayOfMonth + "-" + (month + 1) + "-" + year;
+            mEditTextBirthDate.setText(mDate);
+            Log.d(TAG, "onCreate: " + mDate);
+        };
 
         //country spinner listener
         mSpinnerCountries.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -100,7 +127,7 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
                     setUpStatesSpinner();
 
                 } else {
-                    Log.d(TAG, "onItemSelected: country id after increment: " + mCountryId);
+                    Log.d(TAG, "onItemSelected: country id " + mCountryId);
                     //call api
                     //get list of countries
                     getState(mCountryId);
@@ -124,10 +151,14 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
                 if (mStateId == 0) {
                     Log.d(TAG, "onItemSelected: I'm default...");
 
-                } else {
+                    mCityNames.add("City");
+                    setUpCitySpinner();
 
+                } else {
                     Log.d(TAG, "onItemSelected: State Name: " + adapterView.getItemAtPosition(i).toString() +
                             "\nSelected State Id: " + mStateId);
+
+                    getCities(mStateId);
                 }
             }
 
@@ -137,7 +168,31 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
             }
         });
 
-        makeNetworkRequests();
+        //city spinner listener
+        mSpinnerCities.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+
+                mCityId = getSelectedCityId(
+                        parent.getItemAtPosition(position).toString()
+                );// get city id for selected city
+
+                if (mCityId == 0) {
+                    Log.d(TAG, "onItemSelected: i am default city..");
+                    //mCityNames.add("City");
+
+                } else {
+                    Log.d(TAG, "onItemSelected: City Name: " + parent.getItemAtPosition(position).toString() +
+                            "\nSelected City Id: " + mCityId);
+                }
+
+            }//on Select
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
 
     }//on create
 
@@ -148,20 +203,22 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
 
         //check for network
         if (isNetworkOk()) {
-            //TODO: call api
-            //makeNetworkRequests();
-
+            makeNetworkRequests();
         } else {
-            //network error dialog
-            new AlertDialog.Builder(this)
-                    .setTitle("You are offline")
-                    .setMessage("Please turn on WiFi.")
-                    .setPositiveButton("Turn on", (dialog, which) -> startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS)))
-                    .setNegativeButton("Cancel", (dialog, which) -> {
-                    })
-                    .create().show();
-        }//else
+            networkErrorDialog();
+        }
     }//onStart
+
+    private void networkErrorDialog() {
+        //network error dialog
+        new AlertDialog.Builder(this)
+                .setTitle("You are offline")
+                .setMessage("Please turn on WiFi.")
+                .setPositiveButton("Turn on", (dialog, which) -> startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS)))
+                .setNegativeButton("Cancel", (dialog, which) -> {
+                })
+                .create().show();
+    }
 
     @Override
     public void onClick(View view) {
@@ -169,9 +226,20 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
         switch (view.getId()) {
 
             case R.id.edt_date_of_birth:
-                //TODO: date dialog for different API Levels
                 openDatePickerDialog();
                 break;
+
+            case R.id.btn_register_second_step:
+                //validate
+                if (validateInput()) {
+                    completeRegistration();
+                } else {
+                    UpdateUIWithErrorCode(INPUT_ERROR_CODE);
+                }
+                break;
+
+            default:
+                throw new IllegalStateException("Unexpected value: " + view.getId());
 
         }//switch
 
@@ -214,7 +282,7 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
     private void makeNetworkRequests() {
         Log.d(TAG, "makeNetworkRequests: making request...");
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(BASE_URL)
+                .baseUrl(Constants.BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
@@ -229,11 +297,13 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
     private void getCountries() {
 
         Call<CountryResponse> call = mPartnerRegistrationApi.getAllCountries();
+        mProgressBar.setVisibility(View.VISIBLE);
 
         call.enqueue(new Callback<CountryResponse>() {
             @Override
             public void onResponse(Call<CountryResponse> call, Response<CountryResponse> response) {
                 Log.d(TAG, "onResponse: Country Response is: " + response.isSuccessful());
+                mProgressBar.setVisibility(View.INVISIBLE);
 
                 mCountryNames = new ArrayList<>();
                 mCountryNames.clear();
@@ -257,6 +327,8 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
             @Override
             public void onFailure(Call<CountryResponse> call, Throwable t) {
                 Log.d(TAG, "onFailure: " + t.getMessage());
+                mProgressBar.setVisibility(View.INVISIBLE);
+                networkErrorDialog();
             }
         });// end enqueue countries
     }//end get countries
@@ -295,10 +367,49 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
             @Override
             public void onFailure(Call<StatesResponse> call, Throwable t) {
                 Log.d(TAG, "onFailure: " + t.getMessage());
+                mProgressBar.setVisibility(View.INVISIBLE);
+                networkErrorDialog();
             }
         });//end call
 
     }//end get state
+
+    private void getCities(int id) {
+        Log.d(TAG, "getCities: getting cities...");
+        mProgressBar.setVisibility(View.VISIBLE);
+
+        Call<CityResponse> call = mPartnerRegistrationApi.getAllCities(id);
+
+        call.enqueue(new Callback<CityResponse>() {
+            @Override
+            public void onResponse(Call<CityResponse> call, Response<CityResponse> response) {
+                Log.d(TAG, "onResponse: city response: " + response.isSuccessful());
+                mProgressBar.setVisibility(View.INVISIBLE);
+
+                if (response.body() != null) {
+                    mCities = response.body().getCitiesList();
+                }
+                //clear list
+                mCityNames.clear();
+
+                //def val
+                mCityNames.add("City");
+
+                //get values from api
+                for (Cities cities : mCities) {
+                    mCityNames.add(cities.getName());
+                }
+
+            }
+
+            @Override
+            public void onFailure(Call<CityResponse> call, Throwable t) {
+                Log.d(TAG, "onFailure: " + t.getMessage());
+                mProgressBar.setVisibility(View.INVISIBLE);
+            }
+        });
+
+    }//end get cities
 
     private void setUpCountrySpinner() {
 
@@ -326,6 +437,22 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
 
     }//end spinner
 
+    private void setUpCitySpinner() {
+
+        mCityNames.clear();
+        mCityNames.add("City");
+
+        // Creating adapter for spinner
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(this, R.layout.spinner_item, mCityNames);
+
+        // Drop down layout style - list view with radio button
+        dataAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+
+        // attaching data adapter to spinner
+        mSpinnerCities.setAdapter(dataAdapter);
+
+    }//end spinner
+
     private int getSelectedSateId(String name) {
         Log.d(TAG, "getSelectedStateId: getting id..");
         int id = 0;
@@ -341,6 +468,108 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
 
         Log.d(TAG, "getSelectedSateId: " + id);
         return id;
+    }
+
+    private int getSelectedCityId(String name) {
+        Log.d(TAG, "getSelectedCityId: getting id..");
+        int id = 0;
+
+        if (mCities != null) {
+            for (int i = 0; i < mCities.size(); i++) {
+                if (mCities.get(i).getName().equals(name)) {
+                    id = mCities.get(i).getId();
+                    break;
+                }
+            }
+        }//if
+
+        Log.d(TAG, "getSelectedCityId: " + id);
+        return id;
+    }
+
+    private boolean validateInput() {
+        Log.d(TAG, "validateInput: validating...");
+
+        if (mEditTextBirthDate.getText().toString().trim().isEmpty()) {
+            INPUT_ERROR_CODE = 1;
+            return false;
+        } else if (mEditTextAddressLine1.getText().toString().trim().isEmpty()) {
+            INPUT_ERROR_CODE = 2;
+            return false;
+        } else if (mEditTextAddressLine2.getText().toString().trim().isEmpty()) {
+            INPUT_ERROR_CODE = 3;
+            return false;
+        } else if (mCountryId == 0) {
+            INPUT_ERROR_CODE = 4;
+            return false;
+        } else if (mStateId == 0) {
+            INPUT_ERROR_CODE = 5;
+            return false;
+        } else if (mCityId == 0) {
+            INPUT_ERROR_CODE = 6;
+            return false;
+        } else if (mEditTextZipCode.getText().toString().trim().isEmpty()) {
+            INPUT_ERROR_CODE = 7;
+            return false;
+        } else {
+            Log.d(TAG, "validateInput: input is valid...");
+            return true;
+        }
+
+    }//end validate
+
+    private void UpdateUIWithErrorCode(int errorCode) {
+        Log.d(TAG, "UpdateUIWithErrorCode: updating...");
+
+        switch (errorCode) {
+
+            case 1:
+                mTextViewError.setText(R.string.error_birth_date);
+                break;
+
+            case 2:
+            case 3:
+                mTextViewError.setText(R.string.error_address);
+                break;
+
+            case 4:
+                mTextViewError.setText(R.string.error_country);
+                break;
+
+            case 5:
+                mTextViewError.setText(R.string.error_state);
+                break;
+
+            case 6:
+                mTextViewError.setText(R.string.error_city);
+                break;
+
+            case 7:
+                mTextViewError.setText(R.string.error_zip_code);
+                break;
+
+        }//switch
+
+    }// end update UI
+
+    private void completeRegistration() {
+        Log.d(TAG, "completeRegistration: completing registration...");
+
+        String zip = mEditTextZipCode.getText().toString().trim();
+
+        //insert data into model
+        SecondRegisterStep registerStep = new SecondRegisterStep(
+                mDate,
+                mEditTextAddressLine1.getText().toString().trim(),
+                mEditTextAddressLine2.getText().toString().trim(),
+                String.valueOf(mCountryId),
+                String.valueOf(mStateId),
+                String.valueOf(mCityId),
+                zip
+        );
+        mTextViewError.setText("");
+
+        Log.d(TAG, "completeRegistration: " + registerStep.toString());
     }
 
 

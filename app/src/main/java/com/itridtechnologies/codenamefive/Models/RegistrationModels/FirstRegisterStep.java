@@ -1,5 +1,7 @@
 package com.itridtechnologies.codenamefive.Models.RegistrationModels;
 
+import org.jetbrains.annotations.NotNull;
+
 public class FirstRegisterStep {
 
     private String firstName;
@@ -8,18 +10,29 @@ public class FirstRegisterStep {
     private String password;
     private String phone;
     private String vehicleNum;
-    private String vehicleType;
+    private String vehicleId;
     private String imagePath;
 
     public FirstRegisterStep(String firstName, String lastName, String email, String password,
-                             String phone, String vehicleNum, String vehicleType, String imagePath) {
+                             String phone, String vehicleNum, String vehicleId, String imagePath) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.password = password;
         this.phone = phone;
         this.vehicleNum = vehicleNum;
-        this.vehicleType = vehicleType;
+        this.vehicleId = vehicleId;
+        this.imagePath = imagePath;
+    }
+
+    public FirstRegisterStep(String firstName, String lastName, String email, String password,
+                             String phone, String vehicleId, String imagePath) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.password = password;
+        this.phone = phone;
+        this.vehicleId = vehicleId;
         this.imagePath = imagePath;
     }
 
@@ -51,6 +64,11 @@ public class FirstRegisterStep {
         return imagePath;
     }
 
+    private String getVehicleId() {
+        return vehicleId;
+    }
+
+    @NotNull
     @Override
     public String toString() {
         return "FirstRegisterStep{" +
@@ -60,7 +78,7 @@ public class FirstRegisterStep {
                 ", password='" + password + '\'' +
                 ", phone='" + phone + '\'' +
                 ", vehicleNum='" + vehicleNum + '\'' +
-                ", vehicleType='" + vehicleType + '\'' +
+                ", vehicleType='" + vehicleId + '\'' +
                 ", imagePath='" + imagePath + '\'' +
                 '}';
     }
