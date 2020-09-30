@@ -153,6 +153,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "onPause: Activity visible..");
+        mTextViewError.setText("");
 
         if (FirstRegisterStep.getImageUri() != null) {
             //render rows
@@ -161,8 +162,9 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
             //preview img
             mUserPhoto.setImageURI(FirstRegisterStep.getImageUri());
         }
-        if (vehicleNum != null) {
-            mMaskEditTextVehicleNumber.setText(vehicleNum);
+        if (FirstRegisterStep.getVehicleNum() != null) {
+            if (!FirstRegisterStep.getVehicleNum().equals("null"))
+                mMaskEditTextVehicleNumber.setText(FirstRegisterStep.getVehicleNum());
         }
     }
 
@@ -343,27 +345,28 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
     @Override
     public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
 
+        //clear all errors
         mTextViewError.setText("");
+
         mVehicleId = (int) adapterView.getItemIdAtPosition(i);
+
+        //save id to model for access later
+        FirstRegisterStep.setVehicleId(
+                String.valueOf((int) adapterView.getItemIdAtPosition(i))
+        );
+
         Log.d(TAG, "onItemSelected: item name: " + adapterView.getItemAtPosition(i).toString() +
-                "\nitem id: " + mVehicleId);
+                "\nitem id: " + FirstRegisterStep.getVehicleId());
+
+        int vehicleId = Integer.parseInt(FirstRegisterStep.getVehicleId());
 
         //enable disable vehicle reg field
-        if (mVehicleId == 2 || mVehicleId == 3) {
-            Log.d(TAG, "onItemSelected: here..." + vehicleNum);
-            //clear the text field id any previous data
-            //mMaskEditTextVehicleNumber.setText(null);
-            //vehicleNum = null;
-
+        if (vehicleId == 2 || vehicleId == 3) {
             //set visibility
             mTableRowVehicleRegNum.setVisibility(View.VISIBLE);
 
         } else {
-            //clear data
-            Log.d(TAG, "onItemSelected: else:" + vehicleNum);
             mTableRowVehicleRegNum.setVisibility(View.GONE);
-            //mMaskEditTextVehicleNumber.setText(null);
-            //vehicleNum = null;
         }
     }
 
@@ -415,39 +418,46 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
 
         mEmail = mEditTextEmail.getText().toString().trim();
         mPhone = mEditTextPhone.getText().toString().trim();
+        int vid = Integer.parseInt(FirstRegisterStep.getVehicleId());
 
-        if (mEditTextFirstName.getText().toString().trim().isEmpty()) {
+        if (FirstRegisterStep.getImageUri() == null) {
+            INPUT_ERROR_CODE = 8;
+            return false;
+        } else if (mEditTextFirstName.getText().toString().trim().isEmpty()) {
             INPUT_ERROR_CODE = 1;
             return false;
         } else if (mEditTextLastName.getText().toString().trim().isEmpty()) {
             INPUT_ERROR_CODE = 2;
             return false;
-        } else if (mEmail.isEmpty() ||
-                !(Patterns.EMAIL_ADDRESS.matcher(mEditTextEmail.getText().toString().trim()).matches())) {
+        } else if (mEmail.isEmpty()) {
+            INPUT_ERROR_CODE = 10;
+            return false;
+        } else if (!(Patterns.EMAIL_ADDRESS.matcher(mEditTextEmail.getText().toString().trim()).matches())) {
             INPUT_ERROR_CODE = 3;
             return false;
         } else if (mEditTextPassword.getText().toString().trim().isEmpty()) {
             INPUT_ERROR_CODE = 4;
             return false;
-        } else if (mPhone.isEmpty() ||
-                !PHONE_NUM_PATTERN.matcher(mEditTextPhone.getText().toString().trim()).matches()) {
-            INPUT_ERROR_CODE = 5;
-            return false;
-        } else if (mVehicleId == 0) {
-            INPUT_ERROR_CODE = 7;
-            return false;
-        } else if (mVehicleId != 1 && mMaskEditTextVehicleNumber.getUnMasked().isEmpty()) {
-            INPUT_ERROR_CODE = 6;
-            return false;
-        } else if (FirstRegisterStep.getImageUri() == null) {
-            INPUT_ERROR_CODE = 8;
-            return false;
         } else if (!PASSWORD_PATTERN.matcher(mEditTextPassword.getText().toString().trim()).matches()) {
             INPUT_ERROR_CODE = 9;
             return false;
+        } else if (mPhone.isEmpty()) {
+            INPUT_ERROR_CODE = 11;
+            return false;
+        } else if (!PHONE_NUM_PATTERN.matcher(mEditTextPhone.getText().toString().trim()).matches()) {
+            INPUT_ERROR_CODE = 5;
+            return false;
+        } else if (vid == 0) {
+            INPUT_ERROR_CODE = 7;
+            return false;
+        } else if ((vid == 2 || vid == 3) &&
+                (mMaskEditTextVehicleNumber.getUnMasked().isEmpty() || mMaskEditTextVehicleNumber.getUnMasked().equals("null"))) {
+            INPUT_ERROR_CODE = 6;
+            Log.d(TAG, "inputValidation: hahahahahaahahaahahaah.....");
+            return false;
         } else {
-
-            Log.d(TAG, "inputValidation: input validation success!" + vehicleNum);
+            FirstRegisterStep.setVehicleNum(mMaskEditTextVehicleNumber.getUnMasked());
+            Log.d(TAG, "inputValidation: input validation success!" + FirstRegisterStep.getVehicleNum());
             //data is valid so save values
             return true;
         }
@@ -494,6 +504,14 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
                 mTextViewError.setText(R.string.error_password_weak);
                 break;
 
+            case 10:
+                mTextViewError.setText("Enter your email address");
+                break;
+
+            case 11:
+                mTextViewError.setText("Enter your phone number");
+                break;
+
             default:
                 throw new IllegalStateException("Unexpected value: " + errorCode);
 
@@ -508,40 +526,35 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         String firstName = mEditTextFirstName.getText().toString().trim();
         String lastName = mEditTextLastName.getText().toString().trim();
         String password = mEditTextPassword.getText().toString().trim();
-        vehicleNum = mMaskEditTextVehicleNumber.getUnMasked();
+        String vehicleNumber = mMaskEditTextVehicleNumber.getUnMasked();
+        int vid = Integer.parseInt(FirstRegisterStep.getVehicleId());
 
         if (mIsEmail) {
             //email is valid, so check for phone now
             if (mIsPhone) {
                 //here phone & email are valid
                 //so complete registration
-                if (mVehicleId == 2 || mVehicleId == 3) {
+                //inset data to model
 
-                    //inset data to model
+                FirstRegisterStep.setFirstName(firstName);
+                FirstRegisterStep.setLastName(lastName);
+                FirstRegisterStep.setEmail(mEmail);
+                FirstRegisterStep.setPassword(password);
+                FirstRegisterStep.setPhone(mPhone);
 
-                    FirstRegisterStep.setFirstName(firstName);
-                    FirstRegisterStep.setLastName(lastName);
-                    FirstRegisterStep.setEmail(mEmail);
-                    FirstRegisterStep.setPassword(password);
-                    FirstRegisterStep.setPhone(mPhone);
-                    FirstRegisterStep.setVehicleNum(vehicleNum);
+                if (vid == 2 || vid == 3) {
+
+                    FirstRegisterStep.setVehicleNum(vehicleNumber);
                     FirstRegisterStep.setVehicleId(String.valueOf(mVehicleId));
-                    FirstRegisterStep.setImageUri(mImageUri);
 
                     mProgressBar.setVisibility(View.INVISIBLE);
                     mTextViewError.setText("");
                     navToNextScreen();
-                    Log.d(TAG, "completeRegistrationStep: oky for cars.."+vehicleNum);
+                    Log.d(TAG, "completeRegistrationStep: oky for cars.." + vehicleNum);
 
                 } else {
                     //inset data to model in bicycle case
-                    FirstRegisterStep.setFirstName(firstName);
-                    FirstRegisterStep.setLastName(lastName);
-                    FirstRegisterStep.setEmail(mEmail);
-                    FirstRegisterStep.setPassword(password);
-                    FirstRegisterStep.setPhone(mPhone);
                     FirstRegisterStep.setVehicleId(String.valueOf(mVehicleId));
-                    FirstRegisterStep.setImageUri(mImageUri);
 
                     mProgressBar.setVisibility(View.INVISIBLE);
                     mTextViewError.setText("");
@@ -599,8 +612,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
                         }
                     }
                 } else if (response.code() == 500) {
-                    Toast.makeText(RegisterFirstStep.this, "Email Already Exists..."
-                            , Toast.LENGTH_LONG).show();
+                    mTextViewError.setText("Email already exist");
                     mProgressBar.setVisibility(View.INVISIBLE);
                 }
             }//response
@@ -656,8 +668,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
                 } else if (response.code() == 500) {
 
                     Log.d(TAG, "onResponse: server: " + response.code());
-                    Toast.makeText(RegisterFirstStep.this, "Phone Already Exists..."
-                            , Toast.LENGTH_LONG).show();
+                    mTextViewError.setText("Phone number already exist");
                     mProgressBar.setVisibility(View.GONE);
                 }
             }//response

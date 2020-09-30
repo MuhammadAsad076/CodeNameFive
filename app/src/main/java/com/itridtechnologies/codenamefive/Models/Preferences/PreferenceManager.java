@@ -15,23 +15,23 @@ public class PreferenceManager {
         this.context = context;
     }
 
-    public void SaveProfileImgUri(String uri) {
+    public void saveVehicleNumber(String number) {
         SharedPreferences preferences = context.getSharedPreferences(
-                context.getResources().getString(R.string.PREFERENCE_KEY_PROFILE_IMG),
+                context.getResources().getString(R.string.PREFERENCE_KEY_VEHICLE_NUM),
                 Context.MODE_PRIVATE
         );
         SharedPreferences.Editor editor = preferences.edit();
-        editor.putString("profile_img", uri);
+        editor.putString("profile_img", number);
         editor.apply();
         Log.d(TAG, "SaveProfileImgUri: saved in preferences...");
     }//end fun
 
-    public String RetrieveProfileImg() {
+    public String retrieveVehicleNumber() {
         SharedPreferences preferences = context.getSharedPreferences(
-                context.getResources().getString(R.string.PREFERENCE_KEY_PROFILE_IMG),
+                context.getResources().getString(R.string.PREFERENCE_KEY_VEHICLE_NUM),
                 Context.MODE_PRIVATE
         );
-        return preferences.getString("profile_img", null);
+        return preferences.getString("vehicle_num", null);
     }//end fun
 
 }

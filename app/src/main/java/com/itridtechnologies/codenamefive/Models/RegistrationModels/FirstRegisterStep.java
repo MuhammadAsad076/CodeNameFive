@@ -9,7 +9,7 @@ public final class FirstRegisterStep {
     private static String email;
     private static String password;
     private static String phone;
-    private static String vehicleNum = "null";
+    private static String vehicleNum;
     private static String vehicleId;
     private static Uri imageUri;
 
@@ -58,7 +58,11 @@ public final class FirstRegisterStep {
     }
 
     public static void setVehicleNum(String vehicleNum) {
-        FirstRegisterStep.vehicleNum = vehicleNum;
+        if (!vehicleNum.isEmpty()) {
+            FirstRegisterStep.vehicleNum = vehicleNum;
+        } else {
+            FirstRegisterStep.vehicleNum = "null";
+        }
     }
 
     public static Uri getImageUri() {

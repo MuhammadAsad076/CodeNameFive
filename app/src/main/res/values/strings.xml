@@ -107,8 +107,8 @@
    <string name="error_last_name">Enter your last name</string>
    <string name="error_email_address">Enter a valid email address</string>
    <string name="error_password">Create a new password</string>
-   <string name="error_phone_num">Enter your phone number</string>
-   <string name="error_vehicle_type">Enter your vehicle type</string>
+   <string name="error_phone_num">Enter a valid phone number</string>
+   <string name="error_vehicle_type">Select your vehicle type</string>
    <string name="error_vehicle_reg_num">Enter your vehicle registration number</string>
    <string name="error_profile_pic">Please select a profile photo</string>
    <string name="verify_identity">Enter your date of birth and address to verify your identity</string>
@@ -118,7 +118,7 @@
    <string name="date_of_birth">Date of birth</string>
    <string name="zip_code">Zip code</string>
    <string name="error_message">Error message</string>
-   <string name="error_password_weak">Password too weak, try including\ncapital letters and digits to make password strong</string>
+   <string name="error_password_weak">Password too weak, try including\ncapital letters and digits</string>
    <!-- validation errors -->
 
    <!-- validation errors -->
@@ -152,7 +152,7 @@
    <string name="turn_on">Turn on</string>
    
    <!-- preferences keys -->
-   <string name="PREFERENCE_KEY_PROFILE_IMG">com.itridtechnologies.codenamefive.profile.img</string>
+   <string name="PREFERENCE_KEY_VEHICLE_NUM">com.itridtechnologies.codenamefive.vehicle.num</string>
    <!-- preferences keys -->
 
 </resources>
