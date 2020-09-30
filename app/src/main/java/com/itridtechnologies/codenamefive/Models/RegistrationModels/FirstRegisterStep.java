@@ -1,85 +1,80 @@
 package com.itridtechnologies.codenamefive.Models.RegistrationModels;
 
-import org.jetbrains.annotations.NotNull;
+import android.net.Uri;
 
-public class FirstRegisterStep {
+public final class FirstRegisterStep {
 
-    private String firstName;
-    private String lastName;
-    private String email;
-    private String password;
-    private String phone;
-    private String vehicleNum;
-    private String vehicleId;
-    private String imagePath;
+    private static String firstName;
+    private static String lastName;
+    private static String email;
+    private static String password;
+    private static String phone;
+    private static String vehicleNum = "null";
+    private static String vehicleId;
+    private static Uri imageUri;
 
-    public FirstRegisterStep(String firstName, String lastName, String email, String password,
-                             String phone, String vehicleNum, String vehicleId, String imagePath) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.password = password;
-        this.phone = phone;
-        this.vehicleNum = vehicleNum;
-        this.vehicleId = vehicleId;
-        this.imagePath = imagePath;
-    }
-
-    public FirstRegisterStep(String firstName, String lastName, String email, String password,
-                             String phone, String vehicleId, String imagePath) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.password = password;
-        this.phone = phone;
-        this.vehicleId = vehicleId;
-        this.imagePath = imagePath;
-    }
-
-    public String getFirstName() {
+    public static String getFirstName() {
         return firstName;
     }
 
-    public String getLastName() {
+    public static void setFirstName(String firstName) {
+        FirstRegisterStep.firstName = firstName;
+    }
+
+    public static String getLastName() {
         return lastName;
     }
 
-    public String getEmail() {
+    public static void setLastName(String lastName) {
+        FirstRegisterStep.lastName = lastName;
+    }
+
+    public static String getEmail() {
         return email;
     }
 
-    public String getPassword() {
+    public static void setEmail(String email) {
+        FirstRegisterStep.email = email;
+    }
+
+    public static String getPassword() {
         return password;
     }
 
-    public String getPhone() {
+    public static void setPassword(String password) {
+        FirstRegisterStep.password = password;
+    }
+
+    public static String getPhone() {
         return phone;
     }
 
-    public String getVehicleNum() {
+    public static void setPhone(String phone) {
+        FirstRegisterStep.phone = phone;
+    }
+
+    public static String getVehicleNum() {
         return vehicleNum;
     }
 
-    public String getImagePath() {
-        return imagePath;
+    public static void setVehicleNum(String vehicleNum) {
+        FirstRegisterStep.vehicleNum = vehicleNum;
     }
 
-    private String getVehicleId() {
+    public static Uri getImageUri() {
+        return imageUri;
+    }
+
+    public static void setImageUri(Uri imageUri) {
+        FirstRegisterStep.imageUri = imageUri;
+    }
+
+    public static String getVehicleId() {
         return vehicleId;
     }
 
-    @NotNull
-    @Override
-    public String toString() {
-        return "FirstRegisterStep{" +
-                "firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", email='" + email + '\'' +
-                ", password='" + password + '\'' +
-                ", phone='" + phone + '\'' +
-                ", vehicleNum='" + vehicleNum + '\'' +
-                ", vehicleType='" + vehicleId + '\'' +
-                ", imagePath='" + imagePath + '\'' +
-                '}';
+    public static void setVehicleId(String vehicleId) {
+        FirstRegisterStep.vehicleId = vehicleId;
     }
+
 }//end class

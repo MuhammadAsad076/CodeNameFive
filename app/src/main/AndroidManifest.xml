@@ -9,7 +9,9 @@
    <uses-permission android:name="android.permission.VIBRATE" />
    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-   <uses-permission android:name="android.permission.CAMERA" /> <!-- features request ! -->
+   <uses-permission android:name="android.permission.CAMERA" />
+
+   <!-- features request ! -->
    <uses-feature
        android:name="android.hardware.camera"
        android:required="true" />
@@ -27,7 +29,6 @@
        android:roundIcon="@mipmap/ic_launcher_round"
        android:supportsRtl="true"
        android:theme="@style/AppTheme">
-      <activity android:name=".UIViews.RegisterFinalStep"></activity>
 
       <provider
           android:name="androidx.core.content.FileProvider"
@@ -39,14 +40,16 @@
              android:resource="@xml/file_paths" />
       </provider>
 
-      <activity android:name=".UIViews.RegisterFirstStep" />
-      <activity android:name=".UIViews.RegisterSecondStep">
+      <activity android:name=".UIViews.RegisterFirstStep"
+          android:screenOrientation="portrait">
          <intent-filter>
             <action android:name="android.intent.action.MAIN" />
 
             <category android:name="android.intent.category.LAUNCHER" />
          </intent-filter>
       </activity>
+      <activity android:name=".UIViews.RegisterSecondStep" />
+      <activity android:name=".UIViews.RegisterFinalStep" />
       <activity android:name=".UIViews.GoToPickupLocation" />
       <activity android:name=".UIViews.NewRestaurantTripRequest" /> <!-- Maps API key ! -->
       <!-- AIzaSyBMr4IQRIY5q4nfxP4I6LzpkyP08Ko1DU0 ! -->

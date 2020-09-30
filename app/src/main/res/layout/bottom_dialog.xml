@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+   <TextView
+       android:id="@+id/tv_top"
+       style="@style/TextSmallGrey"
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       android:layout_alignParentTop="true"
+       android:gravity="center_horizontal"
+       android:padding="12dp"
+       android:text="Please select a file to upload"/>
+
+   <TextView
+       android:id="@+id/img_btn_camera"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_below="@id/tv_top"
+       android:layout_toStartOf="@id/img_btn_gallery"
+       android:padding="42dp"
+       android:text="@string/dialog_camera"
+       app:drawableTopCompat="@drawable/ic_photo_camera"
+       tools:ignore="RelativeOverlap" />
+
+
+   <TextView
+       android:id="@+id/img_btn_gallery"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_below="@id/tv_top"
+       android:layout_centerHorizontal="true"
+       android:padding="42dp"
+       android:text="@string/dialog_gallery"
+       app:drawableTopCompat="@drawable/ic_gallery"
+       tools:ignore="RelativeOverlap" />
+
+
+   <TextView
+       android:id="@+id/img_btn_close"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_below="@id/tv_top"
+       android:layout_toEndOf="@id/img_btn_gallery"
+       android:padding="42dp"
+       android:text="@string/dialog_cancel"
+       app:drawableTopCompat="@drawable/ic_close_dialog"
+       tools:ignore="RelativeOverlap" />
+
+
+</RelativeLayout>

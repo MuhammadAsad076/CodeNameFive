@@ -7,7 +7,9 @@
    //custom color
    <color name="appThemeColor">#12D2B3</color>
 
-   <color name="backgroundLightGrey">#E7E9EB</color>
+   <color name="backgroundLightGrey">#F5F7F6</color>
 
    <color name="redErrorColor">#DC3545</color>
+
+   <color name="borderColor">#E7E9EB</color>
 </resources>

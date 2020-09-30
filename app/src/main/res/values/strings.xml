@@ -98,6 +98,9 @@
    <string name="reg_phone_number">Phone number</string>
    <string name="vehicle_num">Vehicle registration number</string>
    <string name="select_vehicle_type">Select your vehicle type</string>
+   <string name="submit_application">Submit application</string>
+   <string name="supporting_document_message">Provide your supporting document to complete your application</string>
+   <string name="id_proof">Proof of ID</string>
 
    <!-- validation errors -->
    <string name="error_first_name">Enter your first name</string>
@@ -107,7 +110,7 @@
    <string name="error_phone_num">Enter your phone number</string>
    <string name="error_vehicle_type">Enter your vehicle type</string>
    <string name="error_vehicle_reg_num">Enter your vehicle registration number</string>
-   <string name="error_profile_pic">Please upload a profile photo</string>
+   <string name="error_profile_pic">Please select a profile photo</string>
    <string name="verify_identity">Enter your date of birth and address to verify your identity</string>
    <string name="age_warning">You must be at least 18 years old to apply as partner</string>
    <string name="address_line_1">Address line 1</string>
@@ -115,6 +118,7 @@
    <string name="date_of_birth">Date of birth</string>
    <string name="zip_code">Zip code</string>
    <string name="error_message">Error message</string>
+   <string name="error_password_weak">Password too weak, try including\ncapital letters and digits to make password strong</string>
    <!-- validation errors -->
 
    <!-- validation errors -->
@@ -124,6 +128,31 @@
    <string name="error_city">Please select your city</string>
    <string name="error_address">Please enter your address</string>
    <string name="error_zip_code">Please enter your zip code</string>
+   <string name="supporting_documents">Supporting documents</string>
+   <string name="front_document">Upload front of the document</string>
+   <string name="back_document">Upload back of the document</string>
+   <string name="proof_of_address">Proof of address</string>
+   <string name="term_after">By proceeding, I agree to platform\'s</string>
+   <string name="user_agreement">By proceeding, I agree to platform\'s Terms of use\nand acknowledge that I have read the privacy policy</string>
+   <string name="address_proof">Upload proof of address</string>
+   <string name="error_age_restriction">You must be 18 years old to become a partner</string>
+   <string name="upload_application">Submitting your application…</string>
    <!-- validation errors -->
+
+   <string name="progress_20_percent">20%</string>
+   <string name="progress_40_percent">40%</string>
+   <string name="progress_60_percent">60%</string>
+   <string name="progress_80_percent">80%</string>
+   <string name="progress_100_percent">100%</string>
+   <string name="dialog_camera">Camera</string>
+   <string name="dialog_gallery">Gallery</string>
+   <string name="dialog_cancel">Cancel</string>
+   <string name="dialog_con_error">Internet connection error</string>
+   <string name="connection_warning">Make sure you have working internet connection.</string>
+   <string name="turn_on">Turn on</string>
+   
+   <!-- preferences keys -->
+   <string name="PREFERENCE_KEY_PROFILE_IMG">com.itridtechnologies.codenamefive.profile.img</string>
+   <!-- preferences keys -->
 
 </resources>

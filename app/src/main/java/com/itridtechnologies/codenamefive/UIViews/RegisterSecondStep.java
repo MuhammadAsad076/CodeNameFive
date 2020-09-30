@@ -34,6 +34,7 @@ import com.itridtechnologies.codenamefive.Models.RegistrationModels.States;
 import com.itridtechnologies.codenamefive.Models.RegistrationModels.StatesResponse;
 import com.itridtechnologies.codenamefive.R;
 import com.itridtechnologies.codenamefive.RetrofitInterfaces.PartnerRegistrationApi;
+import com.itridtechnologies.codenamefive.UIViews.Fragments.FragBottomDialog;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -49,7 +50,6 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
 
     //constants
     private static final String TAG = "RegisterSecondStep";
-
     //vars
     PartnerRegistrationApi mPartnerRegistrationApi;
     //ui views
@@ -64,7 +64,6 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
     private EditText mEditTextAddressLine1;
     private EditText mEditTextAddressLine2;
     private TextView mTextViewError;
-
     private List<Countries> mCountries;
     private List<String> mCountryNames;
 
@@ -79,6 +78,7 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
     private int mCityId = 0;
     private String mDate;
     private int INPUT_ERROR_CODE = 0;
+    private int userBirthYear = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,8 +109,8 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
 
         mOnDateSetListener = (view, year, month, dayOfMonth) -> {
             mDate = dayOfMonth + "-" + (month + 1) + "-" + year;
+            userBirthYear = year;
             mEditTextBirthDate.setText(mDate);
-            Log.d(TAG, "onCreate: " + mDate);
         };
 
         //country spinner listener
@@ -493,6 +493,9 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
         if (mEditTextBirthDate.getText().toString().trim().isEmpty()) {
             INPUT_ERROR_CODE = 1;
             return false;
+        } else if (!is18YearsOld(userBirthYear)) {
+            INPUT_ERROR_CODE = 8;
+            return false;
         } else if (mEditTextAddressLine1.getText().toString().trim().isEmpty()) {
             INPUT_ERROR_CODE = 2;
             return false;
@@ -548,6 +551,10 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
                 mTextViewError.setText(R.string.error_zip_code);
                 break;
 
+            case 8:
+                mTextViewError.setText(R.string.error_age_restriction);
+                break;
+
         }//switch
 
     }// end update UI
@@ -558,19 +565,33 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
         String zip = mEditTextZipCode.getText().toString().trim();
 
         //insert data into model
-        SecondRegisterStep registerStep = new SecondRegisterStep(
-                mDate,
-                mEditTextAddressLine1.getText().toString().trim(),
-                mEditTextAddressLine2.getText().toString().trim(),
-                String.valueOf(mCountryId),
-                String.valueOf(mStateId),
-                String.valueOf(mCityId),
-                zip
-        );
-        mTextViewError.setText("");
+        SecondRegisterStep.dateOfBirth = mDate;
+        SecondRegisterStep.address1 = mEditTextAddressLine1.getText().toString().trim();
+        SecondRegisterStep.address2 = mEditTextAddressLine2.getText().toString().trim();
+        SecondRegisterStep.country = String.valueOf(mCountryId);
+        SecondRegisterStep.state = String.valueOf(mStateId);
+        SecondRegisterStep.city = String.valueOf(mCityId);
+        SecondRegisterStep.zipCode = zip;
 
-        Log.d(TAG, "completeRegistration: " + registerStep.toString());
+        mTextViewError.setText("");
+        Log.d(TAG, "completeRegistration: step 2 is oky!! ");
+        navToNextScreen();
+
     }
 
+    private boolean is18YearsOld(int year) {
+
+        //get current calender year
+        int currentYear =
+                Calendar.getInstance().get(Calendar.YEAR);
+
+        //compare with user entered year
+        return (currentYear - year) >= 18;
+    }
+
+    private void navToNextScreen() {
+        startActivity(new Intent(this, RegisterFinalStep.class));
+        overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
+    }
 
 }//end class

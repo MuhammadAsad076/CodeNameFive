@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:ellipsize="marquee"
-    android:fontFamily="@font/poppins_regular"
+    android:fontFamily="@font/helvetica_neue_regular"
     android:padding="12dp"
     android:singleLine="true"
     android:textColor="@android:color/darker_gray"

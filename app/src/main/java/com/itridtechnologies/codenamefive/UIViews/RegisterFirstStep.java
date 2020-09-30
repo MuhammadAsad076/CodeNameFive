@@ -9,13 +9,16 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
@@ -23,14 +26,22 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.gson.JsonObject;
+import com.itridtechnologies.codenamefive.Models.RegistrationModels.EmailPassExistResponse;
 import com.itridtechnologies.codenamefive.Models.RegistrationModels.FirstRegisterStep;
 import com.itridtechnologies.codenamefive.R;
+import com.itridtechnologies.codenamefive.RetrofitInterfaces.PartnerRegistrationApi;
+import com.itridtechnologies.codenamefive.UIViews.Fragments.FragBottomDialog;
+import com.itridtechnologies.codenamefive.UIViews.Fragments.FragNoInternetDialog;
 import com.santalu.maskara.widget.MaskEditText;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,8 +53,16 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
-public class RegisterFirstStep extends AppCompatActivity implements AdapterView.OnItemSelectedListener, View.OnClickListener {
+import static com.itridtechnologies.codenamefive.Const.Constants.BASE_URL;
+
+public class RegisterFirstStep extends AppCompatActivity implements AdapterView.OnItemSelectedListener, View.OnClickListener,
+        FragBottomDialog.BottomSheetListener, FragNoInternetDialog.ConnectionErrorDialogListener {
 
     //constants
     private static final String TAG = "RegisterFirstStep";
@@ -53,10 +72,15 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
     private static final String READ_STORAGE = Manifest.permission.READ_EXTERNAL_STORAGE;
     private static final String WRITE_STORAGE = Manifest.permission.WRITE_EXTERNAL_STORAGE;
     private static final int PERMISSIONS_REQUEST_CODE = 1122;
-    //pattern password
-    private static final Pattern phoneNumPattern = Pattern.compile("^\\s*(?:\\+" +
+    //pattern phone
+    private static final Pattern PHONE_NUM_PATTERN = Pattern.compile("^\\s*(?:\\+" +
             "?(\\d{1,3}))?[-. (]*(\\d{3})[-. )]*(\\d{3})[-. ]*(\\d{4})(?: *x(\\d+))?\\s*$");
-    private boolean mPermissionGranted = false;
+
+    //pattern password
+    private static final Pattern PASSWORD_PATTERN =
+            Pattern.compile("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{4,}$");
+    private static String vehicleNum = "";
+    PartnerRegistrationApi mAPI;
     //ui views
     private Spinner mVehicleTypeSpinner;
     private TableRow mUploadPhotoRow;
@@ -71,10 +95,17 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
     private Button mButtonContinueRegistration;
     private MaskEditText mMaskEditTextVehicleNumber;
     private TextView mTextViewError;
-
+    private ProgressBar mProgressBar;
     //vars
     private Uri mImageUri;
     private String mImageFilePath;
+    private String mEmailMessage;
+    private String mPhoneMessage;
+    private String mEmail;
+    private String mPhone;
+    private boolean mIsEmail = false;
+    private boolean mIsPhone = false;
+    private boolean mPermissionGranted = false;
     private int mVehicleId = 0;
     private int INPUT_ERROR_CODE = 0;
 
@@ -90,6 +121,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         mTableRowVehicleRegNum = findViewById(R.id.row_vehicle_reg_num);
         mTextViewError = findViewById(R.id.tv_input_error);
         mButtonContinueRegistration = findViewById(R.id.btn_register_first_step);
+        mProgressBar = findViewById(R.id.progressFirstStep);
 
         //editText widgets reference
         mEditTextFirstName = findViewById(R.id.edt_first_name);
@@ -105,6 +137,16 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         mUserPhoto.setOnClickListener(this);
         mButtonContinueRegistration.setOnClickListener(this);
 
+        //init & build retrofit
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+        mAPI = retrofit.create(PartnerRegistrationApi.class);
+
+        //set up spinner
+        setUpSpinner();
+
     }//onCreate
 
     @Override
@@ -112,37 +154,19 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         super.onResume();
         Log.d(TAG, "onPause: Activity visible..");
 
-        //set up spinner
-        setUpSpinner();
+        if (FirstRegisterStep.getImageUri() != null) {
+            //render rows
+            mUploadPhotoRow.setVisibility(View.GONE);
+            mChangePhotoRow.setVisibility(View.VISIBLE);
+            //preview img
+            mUserPhoto.setImageURI(FirstRegisterStep.getImageUri());
+        }
+        if (vehicleNum != null) {
+            mMaskEditTextVehicleNumber.setText(vehicleNum);
+        }
     }
 
     //methods_______________________________________________________________________________________
-
-    private void AlertDialogUploadOptions() {
-
-        final CharSequence[] items = {"Camera", "Gallery"};
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Choose from upload options");
-
-        //on click
-        builder.setItems(items, (dialogInterface, i) -> {
-
-            if (items[i].equals("Camera")) {
-                //open camera intent
-                openCamera();
-
-            } else if (items[i].equals("Gallery")) {
-                //open gallery intent
-                galleryAddPic();
-            }
-
-        }).setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss());
-
-        //build and create
-        builder.create().show();
-
-    }//end dialog
 
     public void requestCameraPermissions() {
 
@@ -156,7 +180,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
 
                     mPermissionGranted = true;
                     Log.d(TAG, "requestCameraPermissions: permissions granted by user..");
-                    AlertDialogUploadOptions();
+                    bottomDialog();
                 }
 
             } else {
@@ -191,8 +215,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
 
             Log.d(TAG, "onRequestPermissionsResult: permissions granted !");
             mPermissionGranted = true;
-            //TODO: call dialog
-            AlertDialogUploadOptions();
+            bottomDialog();
 
         } else {
             throw new IllegalStateException("Unexpected value: " + requestCode);
@@ -219,6 +242,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
                         this,
                         getApplicationContext().getPackageName() + ".provider",
                         photoFile);
+                FirstRegisterStep.setImageUri(mImageUri);
                 cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, mImageUri);
                 startActivityForResult(cameraIntent, PICK_IMAGE_REQUEST);
             }
@@ -231,32 +255,6 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         startActivityForResult(Intent.createChooser(mediaScanIntent, "Select File"), GALLERY_PIC_REQUEST);
     }
 
-    private String getRealPathFromURI(Uri contentUri) {
-
-        Cursor cursor = getContentResolver().query(contentUri, null, null, null, null);
-        String path = "";
-
-        if (cursor != null) {
-
-            cursor.moveToFirst();
-            String document_id = cursor.getString(0);
-            document_id = document_id.substring(document_id.lastIndexOf(":") + 1);
-            cursor.close();
-
-
-            cursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null
-                    , MediaStore.Images.Media._ID + " = ? ", new String[]{document_id}, null);
-
-            assert cursor != null;
-            cursor.moveToFirst();
-            path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
-            cursor.close();
-
-        }
-
-        return path;
-    }
-
     private File createImageFile() throws IOException {
         String timeStamp =
                 new SimpleDateFormat("yyyyMMdd_HHmmss",
@@ -266,7 +264,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
                 getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         File image = File.createTempFile(
                 imageFileName,  /* prefix */
-                ".jpg",         /* suffix */
+                ".jpg",    /* suffix */
                 storageDir      /* directory */
         );
 
@@ -282,6 +280,11 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         if (requestCode == PICK_IMAGE_REQUEST) {
             if (resultCode == RESULT_OK) {
 
+                //hide upload pho row
+                mUploadPhotoRow.setVisibility(View.GONE);
+                //show change profile row
+                mChangePhotoRow.setVisibility(View.VISIBLE);
+
                 Log.d(TAG, "onActivityResult: image result...");
                 mUserPhoto.setImageURI(Uri.parse(mImageFilePath));
                 Toast.makeText(this, "Img saved at: " + mImageFilePath, Toast.LENGTH_SHORT).show();
@@ -292,11 +295,19 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
 
         } else if (requestCode == GALLERY_PIC_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
 
+            //hide upload pho row
+            mUploadPhotoRow.setVisibility(View.GONE);
+            //show change profile row
+            mChangePhotoRow.setVisibility(View.VISIBLE);
+
             mImageUri = data.getData();
             //load image into imageView
             mUserPhoto.setImageURI(mImageUri);
-            mImageFilePath = getRealPathFromURI(mImageUri);
-            Log.d(TAG, "onActivityResult: actual gallery img path: " + getRealPathFromURI(mImageUri));
+
+            FirstRegisterStep.setImageUri(mImageUri);
+
+            //mImageFilePath = getRealPathFromURI(mImageUri);
+            Log.d(TAG, "onActivityResult: img uri: " + mImageUri);
         }
     }
 
@@ -332,15 +343,27 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
     @Override
     public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
 
+        mTextViewError.setText("");
         mVehicleId = (int) adapterView.getItemIdAtPosition(i);
-        Log.d(TAG, "onItemSelected: item name: "+adapterView.getItemAtPosition(i).toString()+
-                "\nitem id: "+mVehicleId);
+        Log.d(TAG, "onItemSelected: item name: " + adapterView.getItemAtPosition(i).toString() +
+                "\nitem id: " + mVehicleId);
 
         //enable disable vehicle reg field
-        if (mVehicleId != 0 & mVehicleId != 1) {
+        if (mVehicleId == 2 || mVehicleId == 3) {
+            Log.d(TAG, "onItemSelected: here..." + vehicleNum);
+            //clear the text field id any previous data
+            //mMaskEditTextVehicleNumber.setText(null);
+            //vehicleNum = null;
+
+            //set visibility
             mTableRowVehicleRegNum.setVisibility(View.VISIBLE);
+
         } else {
+            //clear data
+            Log.d(TAG, "onItemSelected: else:" + vehicleNum);
             mTableRowVehicleRegNum.setVisibility(View.GONE);
+            //mMaskEditTextVehicleNumber.setText(null);
+            //vehicleNum = null;
         }
     }
 
@@ -362,8 +385,20 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
                 break;
 
             case R.id.btn_register_first_step:
+                //clear all error
+                mTextViewError.setText("");
+
                 if (inputValidation()) {
-                    completeRegistrationStep();
+                    //check for internet
+                    if (isNetworkOk()) {
+                        mProgressBar.setVisibility(View.VISIBLE);
+                        //if input is valid (means not null or unformatted)
+                        //call API for email / phone validation
+                        ifEmailExists(mEmail);
+                    } else {
+                        openConnectionErrorDialog();
+                    }
+
                 } else {
                     updateUIWithErrorCode(INPUT_ERROR_CODE);
                 }
@@ -378,34 +413,41 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
     private boolean inputValidation() {
         Log.d(TAG, "inputValidation: validating input...");
 
+        mEmail = mEditTextEmail.getText().toString().trim();
+        mPhone = mEditTextPhone.getText().toString().trim();
+
         if (mEditTextFirstName.getText().toString().trim().isEmpty()) {
             INPUT_ERROR_CODE = 1;
             return false;
         } else if (mEditTextLastName.getText().toString().trim().isEmpty()) {
             INPUT_ERROR_CODE = 2;
             return false;
-        } else if (mEditTextEmail.getText().toString().trim().isEmpty() ||
+        } else if (mEmail.isEmpty() ||
                 !(Patterns.EMAIL_ADDRESS.matcher(mEditTextEmail.getText().toString().trim()).matches())) {
             INPUT_ERROR_CODE = 3;
             return false;
         } else if (mEditTextPassword.getText().toString().trim().isEmpty()) {
             INPUT_ERROR_CODE = 4;
             return false;
-        } else if (mEditTextPhone.getText().toString().trim().isEmpty() ||
-                !phoneNumPattern.matcher(mEditTextPhone.getText().toString()).matches()) {
+        } else if (mPhone.isEmpty() ||
+                !PHONE_NUM_PATTERN.matcher(mEditTextPhone.getText().toString().trim()).matches()) {
             INPUT_ERROR_CODE = 5;
-            return false;
-        } else if (mMaskEditTextVehicleNumber.getUnMasked().trim().isEmpty()) {
-            INPUT_ERROR_CODE = 6;
             return false;
         } else if (mVehicleId == 0) {
             INPUT_ERROR_CODE = 7;
             return false;
-        } else if (mImageFilePath == null) {
+        } else if (mVehicleId != 1 && mMaskEditTextVehicleNumber.getUnMasked().isEmpty()) {
+            INPUT_ERROR_CODE = 6;
+            return false;
+        } else if (FirstRegisterStep.getImageUri() == null) {
             INPUT_ERROR_CODE = 8;
             return false;
+        } else if (!PASSWORD_PATTERN.matcher(mEditTextPassword.getText().toString().trim()).matches()) {
+            INPUT_ERROR_CODE = 9;
+            return false;
         } else {
-            Log.d(TAG, "inputValidation: input validation success!");
+
+            Log.d(TAG, "inputValidation: input validation success!" + vehicleNum);
             //data is valid so save values
             return true;
         }
@@ -448,6 +490,10 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
                 mTextViewError.setText(R.string.error_profile_pic);
                 break;
 
+            case 9:
+                mTextViewError.setText(R.string.error_password_weak);
+                break;
+
             default:
                 throw new IllegalStateException("Unexpected value: " + errorCode);
 
@@ -461,26 +507,212 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         //fetch values from input fields
         String firstName = mEditTextFirstName.getText().toString().trim();
         String lastName = mEditTextLastName.getText().toString().trim();
-        String email = mEditTextEmail.getText().toString().trim();
         String password = mEditTextPassword.getText().toString().trim();
-        String phone = mEditTextPhone.getText().toString().trim();
-        String vehicleNum = mMaskEditTextVehicleNumber.getUnMasked();
+        vehicleNum = mMaskEditTextVehicleNumber.getUnMasked();
 
-        if (mVehicleId != 1) {
+        if (mIsEmail) {
+            //email is valid, so check for phone now
+            if (mIsPhone) {
+                //here phone & email are valid
+                //so complete registration
+                if (mVehicleId == 2 || mVehicleId == 3) {
 
-            //inset data to model
-            FirstRegisterStep register = new FirstRegisterStep(
-                    firstName,
-                    lastName,
-                    email,
-                    password,
-                    phone,
-                    vehicleNum,
-                    String.valueOf(mVehicleId),
-                    mImageFilePath
-            );
-            Log.d(TAG, "completeRegistrationStep: " + register.toString());
+                    //inset data to model
+
+                    FirstRegisterStep.setFirstName(firstName);
+                    FirstRegisterStep.setLastName(lastName);
+                    FirstRegisterStep.setEmail(mEmail);
+                    FirstRegisterStep.setPassword(password);
+                    FirstRegisterStep.setPhone(mPhone);
+                    FirstRegisterStep.setVehicleNum(vehicleNum);
+                    FirstRegisterStep.setVehicleId(String.valueOf(mVehicleId));
+                    FirstRegisterStep.setImageUri(mImageUri);
+
+                    mProgressBar.setVisibility(View.INVISIBLE);
+                    mTextViewError.setText("");
+                    navToNextScreen();
+                    Log.d(TAG, "completeRegistrationStep: oky for cars.."+vehicleNum);
+
+                } else {
+                    //inset data to model in bicycle case
+                    FirstRegisterStep.setFirstName(firstName);
+                    FirstRegisterStep.setLastName(lastName);
+                    FirstRegisterStep.setEmail(mEmail);
+                    FirstRegisterStep.setPassword(password);
+                    FirstRegisterStep.setPhone(mPhone);
+                    FirstRegisterStep.setVehicleId(String.valueOf(mVehicleId));
+                    FirstRegisterStep.setImageUri(mImageUri);
+
+                    mProgressBar.setVisibility(View.INVISIBLE);
+                    mTextViewError.setText("");
+                    navToNextScreen();
+                    Log.d(TAG, "completeRegistrationStep: oky..");
+                }
+
+            } else {
+                mTextViewError.setText(mPhoneMessage);
+            }
+
+        } else {
+            mTextViewError.setText(mEmailMessage);
         }
+
     }//end register
 
+    private void ifEmailExists(String email) {
+        Log.d(TAG, "ifEmailExists: checking...");
+
+        //create a json object for raw parameter
+        //use gson object
+        JsonObject emailParams = new JsonObject();
+
+        //put values
+        emailParams.addProperty("key", "email");
+        emailParams.addProperty("value", email);
+
+        //pass raw json to api
+        Call<EmailPassExistResponse> call = mAPI.isExistingEmail(emailParams);
+
+        //execute call
+        call.enqueue(new Callback<EmailPassExistResponse>() {
+            @Override
+            public void onResponse(@NotNull Call<EmailPassExistResponse> call, @NotNull Response<EmailPassExistResponse> response) {
+
+                Log.d(TAG, "onResponse: code: " + response.code());
+
+                if (response.isSuccessful() && response.code() == 200) {
+                    if (response.body() != null) {
+                        if (response.body().isSuccess()) {
+
+                            Log.d(TAG, "onResponse: api call success: " + response.body().isSuccess());
+                            Log.d(TAG, "onResponse: msg: " + response.body().getMsg());
+                            mIsEmail = true;
+                            //call api phone
+                            ifPhoneExists(mPhone);
+
+                        } else {
+
+                            mEmailMessage = response.body().getMsg();
+                            mIsEmail = false;
+                            Log.d(TAG, "onResponse: api call success: " + response.body().isSuccess() +
+                                    "\nmsg: " + mPhoneMessage);
+                        }
+                    }
+                } else if (response.code() == 500) {
+                    Toast.makeText(RegisterFirstStep.this, "Email Already Exists..."
+                            , Toast.LENGTH_LONG).show();
+                    mProgressBar.setVisibility(View.INVISIBLE);
+                }
+            }//response
+
+            @Override
+            public void onFailure(@NotNull Call<EmailPassExistResponse> call, @NotNull Throwable t) {
+                Log.d(TAG, "onFailure: " + t.getMessage());
+                mProgressBar.setVisibility(View.GONE);
+            }
+        });
+    }//end exists email
+
+    private void ifPhoneExists(String phone) {
+        Log.d(TAG, "ifPhoneExists: checking...");
+
+        //create a json object for raw parameter
+        //use gson object
+        JsonObject phoneParams = new JsonObject();
+
+        //put values
+        phoneParams.addProperty("key", "phoneNumber");
+        phoneParams.addProperty("value", phone);
+
+        //pass raw json to api
+        Call<EmailPassExistResponse> call = mAPI.isExistingPhone(phoneParams);
+
+        //execute call
+        call.enqueue(new Callback<EmailPassExistResponse>() {
+
+
+            @Override
+            public void onResponse(@NotNull Call<EmailPassExistResponse> call, @NotNull Response<EmailPassExistResponse> response) {
+
+                Log.d(TAG, "onResponse: code: " + response.code());
+
+                if (response.isSuccessful() && response.code() == 200) {
+                    if (response.body() != null) {
+                        if (response.body().isSuccess()) {
+
+                            Log.d(TAG, "onResponse: api call success: " + response.body().isSuccess());
+                            Log.d(TAG, "onResponse: msg: " + response.body().getMsg());
+                            mIsPhone = true;
+                            completeRegistrationStep();
+
+                        } else {
+
+                            mPhoneMessage = response.body().getMsg();
+                            Log.d(TAG, "onResponse: api call success: " + response.body().isSuccess() +
+                                    "\nmsg: " + mPhoneMessage);
+                            mIsPhone = false;
+                        }
+                    }
+                } else if (response.code() == 500) {
+
+                    Log.d(TAG, "onResponse: server: " + response.code());
+                    Toast.makeText(RegisterFirstStep.this, "Phone Already Exists..."
+                            , Toast.LENGTH_LONG).show();
+                    mProgressBar.setVisibility(View.GONE);
+                }
+            }//response
+
+            @Override
+            public void onFailure(@NotNull Call<EmailPassExistResponse> call, @NotNull Throwable t) {
+                Log.d(TAG, "onFailure: " + t.getMessage());
+                mProgressBar.setVisibility(View.GONE);
+            }
+        });
+    }//end exists email
+
+    private void navToNextScreen() {
+        startActivity(new Intent(this, RegisterSecondStep.class));
+        overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
+    }
+
+    private void bottomDialog() {
+        FragBottomDialog dialog = new FragBottomDialog();
+        dialog.show(getSupportFragmentManager(), "bottomDialog");
+    }
+
+    //listening to bottom dialog codes
+    @Override
+    public void onImageButtonClicked(int requestCode) {
+        if (requestCode == 1) {
+            openCamera();
+        } else if (requestCode == 2) {
+            galleryAddPic();
+        }
+    }
+
+    public boolean isNetworkOk() {
+        boolean connected = false;
+        try {
+            ConnectivityManager cm = (ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo nInfo = cm.getActiveNetworkInfo();
+            connected = nInfo != null && nInfo.isAvailable() && nInfo.isConnected();
+            Log.d(TAG, "isNetworkOk: " + connected);
+
+        } catch (Exception e) {
+            Log.e("Connectivity Exception", e.getMessage());
+        }
+        return connected;
+    }//end method
+
+    private void openConnectionErrorDialog() {
+        FragNoInternetDialog dialog = new FragNoInternetDialog();
+        dialog.show(getSupportFragmentManager(), "ErrorDialog");
+    }
+
+    @Override
+    public void onDialogButtonClicked(int actionCode) {
+        if (actionCode == 1) {
+            startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+        }
+    }
 }//end class
