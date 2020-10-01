@@ -58,6 +58,10 @@ dependencies {
     implementation 'com.squareup.retrofit2:retrofit:2.4.0'
     //GSON(json to java object converter)
     implementation 'com.squareup.retrofit2:converter-gson:2.4.0'
+    //country spinner ccp
+    implementation 'com.hbb20:ccp:2.4.0'
+    //auto phone num formatter
+    implementation 'com.hbb20:ccp:X.Y.Z'
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'

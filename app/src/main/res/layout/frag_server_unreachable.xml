@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="12dp">
+
+   <TextView
+       android:id="@+id/tvTitle"
+       style="@style/dialogTextBlack"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_alignParentStart="true"
+       android:layout_alignParentTop="true"
+       android:text="Could'nt connect to server"
+       android:textSize="16sp" />
+
+   <ImageView
+       android:id="@+id/imgView"
+       android:layout_width="32dp"
+       android:layout_height="32dp"
+       android:layout_below="@id/tvTitle"
+       android:layout_alignParentStart="true"
+       android:layout_marginTop="10dp"
+       android:contentDescription="@string/app_name"
+       android:src="@drawable/icon_error" />
+
+   <TextView
+       android:id="@+id/tvDescription"
+       style="@style/dialogTextGrey"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_below="@id/tvTitle"
+       android:layout_marginStart="12dp"
+       android:layout_marginTop="14dp"
+       android:layout_toEndOf="@id/imgView"
+       android:text="Server unreachable, try again later." />
+
+   <Button
+       android:id="@+id/mat_btn_cancel"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_below="@id/tvDescription"
+       android:layout_alignEnd="@id/tvDescription"
+       android:layout_centerHorizontal="true"
+       android:background="@android:color/transparent"
+       android:gravity="end|center_vertical"
+       android:text="Okay"
+       android:textAllCaps="false"
+       android:textColor="@color/appThemeColor"
+       android:textSize="14sp"
+       android:textStyle="bold" />
+
+</RelativeLayout>

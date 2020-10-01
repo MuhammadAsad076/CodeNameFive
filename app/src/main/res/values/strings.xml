@@ -153,6 +153,10 @@
    
    <!-- preferences keys -->
    <string name="PREFERENCE_KEY_VEHICLE_NUM">com.itridtechnologies.codenamefive.vehicle.num</string>
+   <string name="error_email_empty">Enter your email address</string>
+   <string name="error_phone_empty">Enter your phone number</string>
+   <string name="error_duplicate_email">Email already exist</string>
+   <string name="error_duplicate_phone">Phone number already exist</string>
    <!-- preferences keys -->
 
 </resources>

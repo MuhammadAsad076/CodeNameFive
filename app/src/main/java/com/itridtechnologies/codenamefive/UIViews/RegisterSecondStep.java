@@ -2,6 +2,7 @@ package com.itridtechnologies.codenamefive.UIViews;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.res.ResourcesCompat;
 
 import android.app.DatePickerDialog;
 import android.content.Context;
@@ -11,6 +12,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.text.InputType;
 import android.util.Log;
@@ -36,9 +38,12 @@ import com.itridtechnologies.codenamefive.R;
 import com.itridtechnologies.codenamefive.RetrofitInterfaces.PartnerRegistrationApi;
 import com.itridtechnologies.codenamefive.UIViews.Fragments.FragBottomDialog;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Objects;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -60,6 +65,7 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
     private Spinner mSpinnerStates;
     private Spinner mSpinnerCities;
     private Button mButtonContinueRegistration;
+    private ProgressBar mProgressBarLoadingButton;
     private EditText mEditTextZipCode;
     private EditText mEditTextAddressLine1;
     private EditText mEditTextAddressLine2;
@@ -96,6 +102,7 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
         mEditTextAddressLine2 = findViewById(R.id.edt_address_line_2);
         mTextViewError = findViewById(R.id.tv_error_msg);
         mButtonContinueRegistration = findViewById(R.id.btn_register_second_step);
+        mProgressBarLoadingButton = findViewById(R.id.progress_bar_btn_continue);
 
         //setting styles
         mEditTextBirthDate.setInputType(InputType.TYPE_NULL);
@@ -232,7 +239,17 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
             case R.id.btn_register_second_step:
                 //validate
                 if (validateInput()) {
-                    completeRegistration();
+
+                    //show processing
+                    showButtonLoading();
+
+                    //handler
+                    Handler handler = new Handler();
+                    handler.postDelayed(() -> {
+                        hideButtonLoading();// hide processing
+                        completeRegistration();
+                    }, 1000);
+
                 } else {
                     UpdateUIWithErrorCode(INPUT_ERROR_CODE);
                 }
@@ -260,7 +277,7 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
                         mOnDateSetListener,
                         year, month, day
                 );
-        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         dialog.show();
 
     }// end PickerDialog
@@ -274,7 +291,7 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
             Log.d(TAG, "isNetworkOk: " + connected);
 
         } catch (Exception e) {
-            Log.e("Connectivity Exception", e.getMessage());
+            Log.e("Connectivity Exception", Objects.requireNonNull(e.getMessage()));
         }
         return connected;
     }//end method
@@ -301,7 +318,7 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
 
         call.enqueue(new Callback<CountryResponse>() {
             @Override
-            public void onResponse(Call<CountryResponse> call, Response<CountryResponse> response) {
+            public void onResponse(@NotNull Call<CountryResponse> call, @NotNull Response<CountryResponse> response) {
                 Log.d(TAG, "onResponse: Country Response is: " + response.isSuccessful());
                 mProgressBar.setVisibility(View.INVISIBLE);
 
@@ -592,6 +609,28 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
     private void navToNextScreen() {
         startActivity(new Intent(this, RegisterFinalStep.class));
         overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
+    }
+
+    private void showButtonLoading() {
+        //hide text
+        mButtonContinueRegistration.setText("");
+        //change color
+        mButtonContinueRegistration.setBackgroundColor(
+                getResources().getColor(R.color.backgroundLightGrey)
+        );
+        //show loading
+        mProgressBarLoadingButton.setVisibility(View.VISIBLE);
+    }
+
+    private void hideButtonLoading() {
+        //hide text
+        mButtonContinueRegistration.setText(getResources().getString(R.string.continue_reg));
+        //change color
+        mButtonContinueRegistration.setBackground(
+                ResourcesCompat.getDrawable(getResources(), R.drawable.btn_round_rect, null)
+        );
+        //show loading
+        mProgressBarLoadingButton.setVisibility(View.GONE);
     }
 
 }//end class

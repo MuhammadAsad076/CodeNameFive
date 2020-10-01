@@ -7,20 +7,6 @@
     android:background="@color/backgroundLightGrey"
     tools:context=".UIViews.RegisterFirstStep">
 
-   <ProgressBar
-       android:id="@+id/progressFirstStep"
-       android:layout_width="wrap_content"
-       android:layout_height="wrap_content"
-       android:elevation="4dp"
-       android:indeterminate="true"
-       android:indeterminateTint="@color/appThemeColor"
-       android:visibility="gone"
-       app:layout_constraintBottom_toBottomOf="parent"
-       app:layout_constraintEnd_toEndOf="parent"
-       app:layout_constraintStart_toStartOf="parent"
-       app:layout_constraintTop_toTopOf="parent"
-       tools:visibility="visible" />
-
    <!-- top bar layout!-->
    <RelativeLayout
        android:id="@+id/relativeLayout4"
@@ -101,7 +87,7 @@
        android:layout_width="0dp"
        android:layout_height="70dp"
        android:background="@drawable/border_top"
-       android:padding="12dp"
+       android:padding="10dp"
        app:layout_constraintBottom_toBottomOf="parent"
        app:layout_constraintEnd_toEndOf="parent"
        app:layout_constraintStart_toStartOf="parent">
@@ -110,12 +96,22 @@
           android:id="@+id/btn_register_first_step"
           style="@style/TextSmallBlack"
           android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:layout_centerInParent="true"
+          android:layout_height="match_parent"
           android:background="@drawable/btn_round_rect"
           android:text="@string/continue_reg"
           android:textAllCaps="false"
           android:textColor="@android:color/white" />
+
+      <ProgressBar
+          android:id="@+id/progress_bar_btn_continue"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_centerInParent="true"
+          android:elevation="2dp"
+          android:indeterminate="true"
+          android:indeterminateTint="@color/appThemeColor"
+          android:visibility="gone"
+          tools:visibility="visible" />
 
    </RelativeLayout>
    <!-- bottom button layout!-->
@@ -204,6 +200,7 @@
              android:id="@+id/row_change_photo"
              android:layout_width="match_parent"
              android:layout_height="wrap_content"
+             android:animateLayoutChanges="true"
              android:visibility="gone"
              tools:visibility="visible">
 
@@ -314,17 +311,39 @@
              android:layout_width="match_parent"
              android:layout_height="wrap_content">
 
-            <EditText
-                android:id="@+id/edt_phone_number"
-                style="@style/TextEsmallGrey"
+            <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:autofillHints=""
                 android:background="@drawable/border_top"
-                android:hint="@string/reg_phone_number"
-                android:inputType="phone"
-                android:padding="12dp" />
+                android:padding="4dp"
+                tools:ignore="UselessParent">
 
+               <com.hbb20.CountryCodePicker
+                   android:id="@+id/ccp_picker"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:layout_alignParentStart="true"
+                   android:layout_centerVertical="true"
+                   app:ccp_defaultNameCode="PK"
+                   app:ccp_textSize="16sp" />
+
+               <EditText
+                   android:id="@+id/edt_phone_number"
+                   style="@style/TextEsmallGrey"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:layout_alignParentEnd="true"
+                   android:layout_centerVertical="true"
+                   android:layout_toEndOf="@id/ccp_picker"
+                   android:autofillHints=""
+                   android:background="@drawable/bg_round_card_white"
+                   android:hint="@string/reg_phone_number"
+                   android:inputType="phone"
+                   android:maxLength="14"
+                   android:padding="2dp"
+                   android:singleLine="true" />
+
+            </RelativeLayout>
          </TableRow>
 
          <TableRow
@@ -351,6 +370,7 @@
              android:id="@+id/row_vehicle_reg_num"
              android:layout_width="match_parent"
              android:layout_height="wrap_content"
+             android:animateLayoutChanges="true"
              android:visibility="gone"
              tools:visibility="visible">
 
@@ -373,7 +393,8 @@
          <!-- row Error Message-->
          <TableRow
              android:layout_width="match_parent"
-             android:layout_height="wrap_content">
+             android:layout_height="wrap_content"
+             android:animateLayoutChanges="true">
 
             <TextView
                 android:id="@+id/tv_input_error"
@@ -381,6 +402,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/transparent_border_top"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
                 android:padding="12dp"
                 android:textColor="@color/redErrorColor"
                 tools:text="Enter your first name" />

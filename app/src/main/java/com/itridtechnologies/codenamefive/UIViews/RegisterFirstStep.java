@@ -2,11 +2,11 @@ package com.itridtechnologies.codenamefive.UIViews;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
+import androidx.core.content.res.ResourcesCompat;
 
 import android.Manifest;
 import android.content.Context;
@@ -33,6 +33,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.JsonObject;
+import com.hbb20.CountryCodePicker;
 import com.itridtechnologies.codenamefive.Models.RegistrationModels.EmailPassExistResponse;
 import com.itridtechnologies.codenamefive.Models.RegistrationModels.FirstRegisterStep;
 import com.itridtechnologies.codenamefive.R;
@@ -50,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 import de.hdodenhof.circleimageview.CircleImageView;
@@ -72,9 +74,6 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
     private static final String READ_STORAGE = Manifest.permission.READ_EXTERNAL_STORAGE;
     private static final String WRITE_STORAGE = Manifest.permission.WRITE_EXTERNAL_STORAGE;
     private static final int PERMISSIONS_REQUEST_CODE = 1122;
-    //pattern phone
-    private static final Pattern PHONE_NUM_PATTERN = Pattern.compile("^\\s*(?:\\+" +
-            "?(\\d{1,3}))?[-. (]*(\\d{3})[-. )]*(\\d{3})[-. ]*(\\d{4})(?: *x(\\d+))?\\s*$");
 
     //pattern password
     private static final Pattern PASSWORD_PATTERN =
@@ -95,7 +94,9 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
     private Button mButtonContinueRegistration;
     private MaskEditText mMaskEditTextVehicleNumber;
     private TextView mTextViewError;
-    private ProgressBar mProgressBar;
+    private CountryCodePicker ccp;
+    private ProgressBar mProgressBarLoadingButton;
+
     //vars
     private Uri mImageUri;
     private String mImageFilePath;
@@ -105,7 +106,6 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
     private String mPhone;
     private boolean mIsEmail = false;
     private boolean mIsPhone = false;
-    private boolean mPermissionGranted = false;
     private int mVehicleId = 0;
     private int INPUT_ERROR_CODE = 0;
 
@@ -121,7 +121,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         mTableRowVehicleRegNum = findViewById(R.id.row_vehicle_reg_num);
         mTextViewError = findViewById(R.id.tv_input_error);
         mButtonContinueRegistration = findViewById(R.id.btn_register_first_step);
-        mProgressBar = findViewById(R.id.progressFirstStep);
+        mProgressBarLoadingButton = findViewById(R.id.progress_bar_btn_continue);
 
         //editText widgets reference
         mEditTextFirstName = findViewById(R.id.edt_first_name);
@@ -130,6 +130,13 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         mEditTextPassword = findViewById(R.id.edt_password);
         mEditTextPhone = findViewById(R.id.edt_phone_number);
         mMaskEditTextVehicleNumber = findViewById(R.id.edt_vehicle_number);
+
+        //ccp
+        ccp = findViewById(R.id.ccp_picker);
+        /*register edt_phone to ccp
+        in order to format number
+        */
+        ccp.registerCarrierNumberEditText(mEditTextPhone);
 
         //set listener
         mUploadPhotoRow.setOnClickListener(this);
@@ -180,7 +187,6 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
             if (ContextCompat.checkSelfPermission(this.getApplicationContext(), READ_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                 if (ContextCompat.checkSelfPermission(this.getApplicationContext(), WRITE_STORAGE) == PackageManager.PERMISSION_GRANTED) {
 
-                    mPermissionGranted = true;
                     Log.d(TAG, "requestCameraPermissions: permissions granted by user..");
                     bottomDialog();
                 }
@@ -208,7 +214,6 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
             if (grantResults.length > 0) {
                 for (int grantResult : grantResults) {
                     if (grantResult != PackageManager.PERMISSION_GRANTED) {
-                        mPermissionGranted = false;
                         Log.d(TAG, "onRequestPermissionsResult: permissions failed..");
                         return;
                     }
@@ -216,7 +221,6 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
             }//end if
 
             Log.d(TAG, "onRequestPermissionsResult: permissions granted !");
-            mPermissionGranted = true;
             bottomDialog();
 
         } else {
@@ -394,7 +398,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
                 if (inputValidation()) {
                     //check for internet
                     if (isNetworkOk()) {
-                        mProgressBar.setVisibility(View.VISIBLE);
+                        showButtonLoading();
                         //if input is valid (means not null or unformatted)
                         //call API for email / phone validation
                         ifEmailExists(mEmail);
@@ -444,7 +448,12 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         } else if (mPhone.isEmpty()) {
             INPUT_ERROR_CODE = 11;
             return false;
-        } else if (!PHONE_NUM_PATTERN.matcher(mEditTextPhone.getText().toString().trim()).matches()) {
+        }
+//        else if (!PHONE_NUM_PATTERN.matcher(mEditTextPhone.getText().toString().trim()).matches()) {
+//            INPUT_ERROR_CODE = 5;
+//            return false;
+//        }
+        else if (!ccp.isValidFullNumber()) {
             INPUT_ERROR_CODE = 5;
             return false;
         } else if (vid == 0) {
@@ -456,8 +465,9 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
             Log.d(TAG, "inputValidation: hahahahahaahahaahahaah.....");
             return false;
         } else {
+            mPhone = ccp.getFullNumberWithPlus();
             FirstRegisterStep.setVehicleNum(mMaskEditTextVehicleNumber.getUnMasked());
-            Log.d(TAG, "inputValidation: input validation success!" + FirstRegisterStep.getVehicleNum());
+            Log.d(TAG, "inputValidation: input validation success!" + FirstRegisterStep.getVehicleNum() + mPhone);
             //data is valid so save values
             return true;
         }
@@ -470,46 +480,57 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
 
             case 1:
                 mTextViewError.setText(R.string.error_first_name);
+                focusToBottom();
                 break;
 
             case 2:
                 mTextViewError.setText(R.string.error_last_name);
+                focusToBottom();
                 break;
 
             case 3:
                 mTextViewError.setText(R.string.error_email_address);
+                focusToBottom();
                 break;
 
             case 4:
                 mTextViewError.setText(R.string.error_password);
+                focusToBottom();
                 break;
 
             case 5:
                 mTextViewError.setText(R.string.error_phone_num);
+                focusToBottom();
                 break;
 
             case 6:
                 mTextViewError.setText(R.string.error_vehicle_reg_num);
+                focusToBottom();
                 break;
 
             case 7:
                 mTextViewError.setText(R.string.error_vehicle_type);
+                focusToBottom();
                 break;
 
             case 8:
                 mTextViewError.setText(R.string.error_profile_pic);
+                focusToBottom();
                 break;
 
             case 9:
                 mTextViewError.setText(R.string.error_password_weak);
+                focusToBottom();
                 break;
 
             case 10:
-                mTextViewError.setText("Enter your email address");
+                mTextViewError.setText(R.string.error_email_empty);
+                focusToBottom();
                 break;
 
             case 11:
-                mTextViewError.setText("Enter your phone number");
+                mTextViewError.setText(R.string.error_phone_empty);
+                focusToBottom();
                 break;
 
             default:
@@ -547,16 +568,18 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
                     FirstRegisterStep.setVehicleNum(vehicleNumber);
                     FirstRegisterStep.setVehicleId(String.valueOf(mVehicleId));
 
-                    mProgressBar.setVisibility(View.INVISIBLE);
+                    //mProgressBar.setVisibility(View.INVISIBLE);
+                    hideButtonLoading();
                     mTextViewError.setText("");
                     navToNextScreen();
-                    Log.d(TAG, "completeRegistrationStep: oky for cars.." + vehicleNum);
+                    Log.d(TAG, "completeRegistrationStep: oky for cars.." + vehicleNum + "  -> phone: " + mPhone);
 
                 } else {
                     //inset data to model in bicycle case
                     FirstRegisterStep.setVehicleId(String.valueOf(mVehicleId));
 
-                    mProgressBar.setVisibility(View.INVISIBLE);
+                    //mProgressBar.setVisibility(View.INVISIBLE);
+                    hideButtonLoading();
                     mTextViewError.setText("");
                     navToNextScreen();
                     Log.d(TAG, "completeRegistrationStep: oky..");
@@ -612,15 +635,18 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
                         }
                     }
                 } else if (response.code() == 500) {
-                    mTextViewError.setText("Email already exist");
-                    mProgressBar.setVisibility(View.INVISIBLE);
+                    mTextViewError.setText(R.string.error_duplicate_email);
+                    //mProgressBar.setVisibility(View.INVISIBLE);
+                    hideButtonLoading();
                 }
             }//response
 
             @Override
             public void onFailure(@NotNull Call<EmailPassExistResponse> call, @NotNull Throwable t) {
                 Log.d(TAG, "onFailure: " + t.getMessage());
-                mProgressBar.setVisibility(View.GONE);
+                Toast.makeText(RegisterFirstStep.this, "Error establishing connection with server", Toast.LENGTH_SHORT).show();
+                //mProgressBar.setVisibility(View.GONE);
+                hideButtonLoading();
             }
         });
     }//end exists email
@@ -668,18 +694,23 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
                 } else if (response.code() == 500) {
 
                     Log.d(TAG, "onResponse: server: " + response.code());
-                    mTextViewError.setText("Phone number already exist");
-                    mProgressBar.setVisibility(View.GONE);
+                    mTextViewError.setText(R.string.error_duplicate_phone);
+                    //mProgressBar.setVisibility(View.GONE);
+                    hideButtonLoading();
                 }
             }//response
 
             @Override
             public void onFailure(@NotNull Call<EmailPassExistResponse> call, @NotNull Throwable t) {
                 Log.d(TAG, "onFailure: " + t.getMessage());
-                mProgressBar.setVisibility(View.GONE);
+                Toast.makeText(RegisterFirstStep.this, "Error establishing connection with server", Toast.LENGTH_SHORT).show();
+                //mProgressBar.setVisibility(View.GONE);
+                hideButtonLoading();
             }
         });
     }//end exists email
+
+    //utility methods_________________________________________________________
 
     private void navToNextScreen() {
         startActivity(new Intent(this, RegisterSecondStep.class));
@@ -710,7 +741,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
             Log.d(TAG, "isNetworkOk: " + connected);
 
         } catch (Exception e) {
-            Log.e("Connectivity Exception", e.getMessage());
+            Log.e("Connectivity Exception", Objects.requireNonNull(e.getMessage()));
         }
         return connected;
     }//end method
@@ -725,5 +756,31 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         if (actionCode == 1) {
             startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
         }
+    }
+
+    private void focusToBottom() {
+        mTextViewError.requestFocus();
+    }
+
+    private void showButtonLoading() {
+        //hide text
+        mButtonContinueRegistration.setText("");
+        //change color
+        mButtonContinueRegistration.setBackgroundColor(
+                getResources().getColor(R.color.backgroundLightGrey)
+        );
+        //show loading
+        mProgressBarLoadingButton.setVisibility(View.VISIBLE);
+    }
+
+    private void hideButtonLoading() {
+        //hide text
+        mButtonContinueRegistration.setText(getResources().getString(R.string.continue_reg));
+        //change color
+        mButtonContinueRegistration.setBackground(
+                ResourcesCompat.getDrawable(getResources(), R.drawable.btn_round_rect, null)
+        );
+        //show loading
+        mProgressBarLoadingButton.setVisibility(View.GONE);
     }
 }//end class
