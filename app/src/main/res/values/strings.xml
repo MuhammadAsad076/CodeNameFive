@@ -135,6 +135,7 @@
    <string name="term_after">By proceeding, I agree to platform\'s</string>
    <string name="user_agreement">By proceeding, I agree to platform\'s Terms of use\nand acknowledge that I have read the privacy policy</string>
    <string name="address_proof">Upload proof of address</string>
+   <string name="agreement_error">You must accept the terms of use and privacy policy\nto SignUp as a delivery partner</string>
    <string name="error_age_restriction">You must be 18 years old to become a partner</string>
    <string name="upload_application">Submitting your application…</string>
    <!-- validation errors -->

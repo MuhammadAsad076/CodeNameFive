@@ -9,7 +9,9 @@ import androidx.core.content.FileProvider;
 import androidx.core.content.res.ResourcesCompat;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
@@ -22,6 +24,8 @@ import android.provider.Settings;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -40,6 +44,7 @@ import com.itridtechnologies.codenamefive.R;
 import com.itridtechnologies.codenamefive.RetrofitInterfaces.PartnerRegistrationApi;
 import com.itridtechnologies.codenamefive.UIViews.Fragments.FragBottomDialog;
 import com.itridtechnologies.codenamefive.UIViews.Fragments.FragNoInternetDialog;
+import com.itridtechnologies.codenamefive.utils.UniversalDialog;
 import com.santalu.maskara.widget.MaskEditText;
 
 import org.jetbrains.annotations.NotNull;
@@ -64,7 +69,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import static com.itridtechnologies.codenamefive.Const.Constants.BASE_URL;
 
 public class RegisterFirstStep extends AppCompatActivity implements AdapterView.OnItemSelectedListener, View.OnClickListener,
-        FragBottomDialog.BottomSheetListener, FragNoInternetDialog.ConnectionErrorDialogListener {
+        FragBottomDialog.BottomSheetListener, UniversalDialog.DialogListener {
 
     //constants
     private static final String TAG = "RegisterFirstStep";
@@ -80,6 +85,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
             Pattern.compile("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{4,}$");
     private static String vehicleNum = "";
     PartnerRegistrationApi mAPI;
+    Animation fadeIn;
     //ui views
     private Spinner mVehicleTypeSpinner;
     private TableRow mUploadPhotoRow;
@@ -96,7 +102,6 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
     private TextView mTextViewError;
     private CountryCodePicker ccp;
     private ProgressBar mProgressBarLoadingButton;
-
     //vars
     private Uri mImageUri;
     private String mImageFilePath;
@@ -215,6 +220,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
                 for (int grantResult : grantResults) {
                     if (grantResult != PackageManager.PERMISSION_GRANTED) {
                         Log.d(TAG, "onRequestPermissionsResult: permissions failed..");
+                        showPermissionDialog();
                         return;
                     }
                 }//end for
@@ -312,7 +318,6 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
 
             FirstRegisterStep.setImageUri(mImageUri);
 
-            //mImageFilePath = getRealPathFromURI(mImageUri);
             Log.d(TAG, "onActivityResult: img uri: " + mImageUri);
         }
     }
@@ -392,23 +397,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
                 break;
 
             case R.id.btn_register_first_step:
-                //clear all error
-                mTextViewError.setText("");
-
-                if (inputValidation()) {
-                    //check for internet
-                    if (isNetworkOk()) {
-                        showButtonLoading();
-                        //if input is valid (means not null or unformatted)
-                        //call API for email / phone validation
-                        ifEmailExists(mEmail);
-                    } else {
-                        openConnectionErrorDialog();
-                    }
-
-                } else {
-                    updateUIWithErrorCode(INPUT_ERROR_CODE);
-                }
+                continueButtonLogic();
                 break;
 
             default:
@@ -416,6 +405,26 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         }//switch
 
     }//end click
+
+    private void continueButtonLogic() {
+        mTextViewError.setText("");
+
+        if (inputValidation()) {
+            //check for internet
+            if (isNetworkOk()) {
+                showButtonLoading();
+                //if input is valid (means not null or unformatted)
+                //call API for email / phone validation
+                ifEmailExists(mEmail);
+            } else {
+                //user is offline
+                showInternetErrorDialog();
+            }
+
+        } else {
+            updateUIWithErrorCode(INPUT_ERROR_CODE);
+        }
+    }//on continue registration button clicked
 
     private boolean inputValidation() {
         Log.d(TAG, "inputValidation: validating input...");
@@ -448,12 +457,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         } else if (mPhone.isEmpty()) {
             INPUT_ERROR_CODE = 11;
             return false;
-        }
-//        else if (!PHONE_NUM_PATTERN.matcher(mEditTextPhone.getText().toString().trim()).matches()) {
-//            INPUT_ERROR_CODE = 5;
-//            return false;
-//        }
-        else if (!ccp.isValidFullNumber()) {
+        } else if (!ccp.isValidFullNumber()) {
             INPUT_ERROR_CODE = 5;
             return false;
         } else if (vid == 0) {
@@ -636,7 +640,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
                     }
                 } else if (response.code() == 500) {
                     mTextViewError.setText(R.string.error_duplicate_email);
-                    //mProgressBar.setVisibility(View.INVISIBLE);
+                    focusToBottom();
                     hideButtonLoading();
                 }
             }//response
@@ -644,8 +648,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
             @Override
             public void onFailure(@NotNull Call<EmailPassExistResponse> call, @NotNull Throwable t) {
                 Log.d(TAG, "onFailure: " + t.getMessage());
-                Toast.makeText(RegisterFirstStep.this, "Error establishing connection with server", Toast.LENGTH_SHORT).show();
-                //mProgressBar.setVisibility(View.GONE);
+                showServerErrorDialog();
                 hideButtonLoading();
             }
         });
@@ -695,7 +698,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
 
                     Log.d(TAG, "onResponse: server: " + response.code());
                     mTextViewError.setText(R.string.error_duplicate_phone);
-                    //mProgressBar.setVisibility(View.GONE);
+                    focusToBottom();
                     hideButtonLoading();
                 }
             }//response
@@ -703,8 +706,7 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
             @Override
             public void onFailure(@NotNull Call<EmailPassExistResponse> call, @NotNull Throwable t) {
                 Log.d(TAG, "onFailure: " + t.getMessage());
-                Toast.makeText(RegisterFirstStep.this, "Error establishing connection with server", Toast.LENGTH_SHORT).show();
-                //mProgressBar.setVisibility(View.GONE);
+                showServerErrorDialog();
                 hideButtonLoading();
             }
         });
@@ -746,19 +748,10 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         return connected;
     }//end method
 
-    private void openConnectionErrorDialog() {
-        FragNoInternetDialog dialog = new FragNoInternetDialog();
-        dialog.show(getSupportFragmentManager(), "ErrorDialog");
-    }
-
-    @Override
-    public void onDialogButtonClicked(int actionCode) {
-        if (actionCode == 1) {
-            startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
-        }
-    }
-
     private void focusToBottom() {
+        //load animation for error tv
+        fadeIn = AnimationUtils.loadAnimation(this, R.anim.fade_in);
+        mTextViewError.setAnimation(fadeIn);
         mTextViewError.requestFocus();
     }
 
@@ -783,4 +776,63 @@ public class RegisterFirstStep extends AppCompatActivity implements AdapterView.
         //show loading
         mProgressBarLoadingButton.setVisibility(View.GONE);
     }
+
+    private void showInternetErrorDialog() {
+        UniversalDialog dialog = new UniversalDialog(
+                getResources().getString(R.string.dialog_con_error),
+                getResources().getString(R.string.connection_warning),
+                getResources().getString(R.string.turn_on),
+                getResources().getString(R.string.dialog_cancel),
+                R.drawable.icon_no_internet,
+                1,
+                0
+        );
+        dialog.show(getSupportFragmentManager(), "No Internet");
+    }
+
+    private void showServerErrorDialog() {
+        UniversalDialog dialog = new UniversalDialog(
+                "Could'nt connect to server",
+                "Server unreachable, try again later.",
+                "Retry",
+                getResources().getString(R.string.dialog_cancel),
+                R.drawable.icon_error,
+                2,
+                0
+        );
+        dialog.show(getSupportFragmentManager(), "Server Error");
+    }
+
+    @Override
+    public void onDialogButtonClicked(int code) {
+        if (code != 0) {
+            if (code == 1) {
+                startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+            } else if (code == 2) {
+                //server unreachable (clear text communication not possible)
+                continueButtonLogic();
+            } else if (code == 3) {
+
+                Intent intent = new Intent();
+                intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                Uri uri = Uri.fromParts("package", "com.itridtechnologies.codenamefive", null);
+                intent.setData(uri);
+                this.startActivity(intent);
+            }
+        }
+    }//dialog btn interface
+
+    private void showPermissionDialog() {
+        UniversalDialog dialog = new UniversalDialog(
+                "Permissions are required",
+                "You need to provide storage permissions, to access photos from storage",
+                "I understand",
+                "Cancel",
+                R.drawable.icon_storage,
+                3,
+                0
+        );
+        dialog.show(getSupportFragmentManager(), "Permission Dialog");
+    }
+
 }//end class

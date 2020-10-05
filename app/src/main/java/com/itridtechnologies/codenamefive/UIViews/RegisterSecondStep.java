@@ -17,6 +17,8 @@ import android.provider.Settings;
 import android.text.InputType;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -37,6 +39,7 @@ import com.itridtechnologies.codenamefive.Models.RegistrationModels.StatesRespon
 import com.itridtechnologies.codenamefive.R;
 import com.itridtechnologies.codenamefive.RetrofitInterfaces.PartnerRegistrationApi;
 import com.itridtechnologies.codenamefive.UIViews.Fragments.FragBottomDialog;
+import com.itridtechnologies.codenamefive.utils.UniversalDialog;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -51,7 +54,7 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class RegisterSecondStep extends AppCompatActivity implements View.OnClickListener {
+public class RegisterSecondStep extends AppCompatActivity implements View.OnClickListener, UniversalDialog.DialogListener {
 
     //constants
     private static final String TAG = "RegisterSecondStep";
@@ -85,6 +88,7 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
     private String mDate;
     private int INPUT_ERROR_CODE = 0;
     private int userBirthYear = 0;
+    Animation fadeIn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -137,7 +141,12 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
                     Log.d(TAG, "onItemSelected: country id " + mCountryId);
                     //call api
                     //get list of countries
-                    getState(mCountryId);
+                    if (isNetworkOk()) {
+                        getState(mCountryId);
+                    } else {
+                        showInternetErrorDialog();
+                    }
+
                 }
             }
 
@@ -165,7 +174,12 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
                     Log.d(TAG, "onItemSelected: State Name: " + adapterView.getItemAtPosition(i).toString() +
                             "\nSelected State Id: " + mStateId);
 
-                    getCities(mStateId);
+                    if (isNetworkOk()) {
+                        getCities(mStateId);
+                    } else {
+                        showInternetErrorDialog();
+                    }
+
                 }
             }
 
@@ -212,19 +226,34 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
         if (isNetworkOk()) {
             makeNetworkRequests();
         } else {
-            networkErrorDialog();
+            showInternetErrorDialog();
         }
     }//onStart
 
-    private void networkErrorDialog() {
-        //network error dialog
-        new AlertDialog.Builder(this)
-                .setTitle("You are offline")
-                .setMessage("Please turn on WiFi.")
-                .setPositiveButton("Turn on", (dialog, which) -> startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS)))
-                .setNegativeButton("Cancel", (dialog, which) -> {
-                })
-                .create().show();
+    private void showInternetErrorDialog() {
+        UniversalDialog dialog = new UniversalDialog(
+                getResources().getString(R.string.dialog_con_error),
+                getResources().getString(R.string.connection_warning),
+                getResources().getString(R.string.turn_on),
+                getResources().getString(R.string.dialog_cancel),
+                R.drawable.icon_no_internet,
+                1,
+                0
+        );
+        dialog.show(getSupportFragmentManager(), "No Internet");
+    }
+
+    private void showServerErrorDialog() {
+        UniversalDialog dialog = new UniversalDialog(
+                "Could'nt connect to server",
+                "Server unreachable, try again later.",
+                "Retry",
+                getResources().getString(R.string.dialog_cancel),
+                R.drawable.icon_error,
+                2,
+                0
+        );
+        dialog.show(getSupportFragmentManager(), "Server Error");
     }
 
     @Override
@@ -320,32 +349,39 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
             @Override
             public void onResponse(@NotNull Call<CountryResponse> call, @NotNull Response<CountryResponse> response) {
                 Log.d(TAG, "onResponse: Country Response is: " + response.isSuccessful());
-                mProgressBar.setVisibility(View.INVISIBLE);
 
-                mCountryNames = new ArrayList<>();
-                mCountryNames.clear();
+                if (response.isSuccessful() && response.code() == 200) {
+                    mProgressBar.setVisibility(View.INVISIBLE);
 
-                //default params
-                mCountryNames.add("Country");
+                    mCountryNames = new ArrayList<>();
+                    mCountryNames.clear();
 
-                assert response.body() != null;
-                //assign
-                mCountries = response.body().getCountries();
+                    //default params
+                    mCountryNames.add("Country");
 
-                //fetch data from List of country
-                for (Countries countries : mCountries) {
-                    mCountryNames.add(countries.getName());
+                    assert response.body() != null;
+                    //assign
+                    mCountries = response.body().getCountries();
+
+                    //fetch data from List of country
+                    for (Countries countries : mCountries) {
+                        mCountryNames.add(countries.getName());
+                    }
+
+                    //load countries in spinner
+                    setUpCountrySpinner();
+
+                } else if (response.code() == 500) {
+                    mProgressBar.setVisibility(View.GONE);
+                    showServerErrorDialog();
                 }
-
-                //load countries in spinner
-                setUpCountrySpinner();
-            }
+            }//response
 
             @Override
-            public void onFailure(Call<CountryResponse> call, Throwable t) {
+            public void onFailure(@NotNull Call<CountryResponse> call, @NotNull Throwable t) {
                 Log.d(TAG, "onFailure: " + t.getMessage());
                 mProgressBar.setVisibility(View.INVISIBLE);
-                networkErrorDialog();
+                showServerErrorDialog();
             }
         });// end enqueue countries
     }//end get countries
@@ -358,34 +394,40 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
 
         call.enqueue(new Callback<StatesResponse>() {
             @Override
-            public void onResponse(Call<StatesResponse> call, Response<StatesResponse> response) {
+            public void onResponse(@NotNull Call<StatesResponse> call, @NotNull Response<StatesResponse> response) {
                 Log.d(TAG, "onResponse: states: " + response.isSuccessful());
-                mProgressBar.setVisibility(View.GONE);
+                if (response.isSuccessful() && response.code() == 200) {
+                    mProgressBar.setVisibility(View.GONE);
 
-                mStateNames.clear();
+                    mStateNames.clear();
 
-                //default params
-                mStateNames.add("State");
+                    //default params
+                    mStateNames.add("State");
 
-                //assign
-                if (response.body() != null) {
-                    mStates = response.body().getStatesList();
+                    //assign
+                    if (response.body() != null) {
+                        mStates = response.body().getStatesList();
+                    }
+
+                    //fetch data from List of country
+                    for (States states : mStates) {
+                        mStateNames.add(states.getName());
+                    }
+
+                    //load spinner with list of states
+                    setUpStatesSpinner();
+
+                } else if (response.code() == 500) {
+                    mProgressBar.setVisibility(View.GONE);
+                    showServerErrorDialog();
                 }
-
-                //fetch data from List of country
-                for (States states : mStates) {
-                    mStateNames.add(states.getName());
-                }
-
-                //load spinner with list of states
-                setUpStatesSpinner();
-            }
+            }//response
 
             @Override
-            public void onFailure(Call<StatesResponse> call, Throwable t) {
+            public void onFailure(@NotNull Call<StatesResponse> call, @NotNull Throwable t) {
                 Log.d(TAG, "onFailure: " + t.getMessage());
                 mProgressBar.setVisibility(View.INVISIBLE);
-                networkErrorDialog();
+                showServerErrorDialog();
             }
         });//end call
 
@@ -399,30 +441,36 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
 
         call.enqueue(new Callback<CityResponse>() {
             @Override
-            public void onResponse(Call<CityResponse> call, Response<CityResponse> response) {
+            public void onResponse(@NotNull Call<CityResponse> call, @NotNull Response<CityResponse> response) {
                 Log.d(TAG, "onResponse: city response: " + response.isSuccessful());
-                mProgressBar.setVisibility(View.INVISIBLE);
 
-                if (response.body() != null) {
-                    mCities = response.body().getCitiesList();
+                if (response.isSuccessful() && response.code() == 200) {
+                    mProgressBar.setVisibility(View.INVISIBLE);
+
+                    if (response.body() != null) {
+                        mCities = response.body().getCitiesList();
+                    }
+                    //clear list
+                    mCityNames.clear();
+
+                    //def val
+                    mCityNames.add("City");
+
+                    //get values from api
+                    for (Cities cities : mCities) {
+                        mCityNames.add(cities.getName());
+                    }
+                } else if (response.code() == 500) {
+                    mProgressBar.setVisibility(View.GONE);
+                    showServerErrorDialog();
                 }
-                //clear list
-                mCityNames.clear();
-
-                //def val
-                mCityNames.add("City");
-
-                //get values from api
-                for (Cities cities : mCities) {
-                    mCityNames.add(cities.getName());
-                }
-
-            }
+            }//response
 
             @Override
-            public void onFailure(Call<CityResponse> call, Throwable t) {
+            public void onFailure(@NotNull Call<CityResponse> call, @NotNull Throwable t) {
                 Log.d(TAG, "onFailure: " + t.getMessage());
                 mProgressBar.setVisibility(View.INVISIBLE);
+                showServerErrorDialog();
             }
         });
 
@@ -545,31 +593,38 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
 
             case 1:
                 mTextViewError.setText(R.string.error_birth_date);
+                focusToBottom();
                 break;
 
             case 2:
             case 3:
                 mTextViewError.setText(R.string.error_address);
+                focusToBottom();
                 break;
 
             case 4:
                 mTextViewError.setText(R.string.error_country);
+                focusToBottom();
                 break;
 
             case 5:
                 mTextViewError.setText(R.string.error_state);
+                focusToBottom();
                 break;
 
             case 6:
                 mTextViewError.setText(R.string.error_city);
+                focusToBottom();
                 break;
 
             case 7:
                 mTextViewError.setText(R.string.error_zip_code);
+                focusToBottom();
                 break;
 
             case 8:
                 mTextViewError.setText(R.string.error_age_restriction);
+                focusToBottom();
                 break;
 
         }//switch
@@ -633,4 +688,22 @@ public class RegisterSecondStep extends AppCompatActivity implements View.OnClic
         mProgressBarLoadingButton.setVisibility(View.GONE);
     }
 
+    @Override
+    public void onDialogButtonClicked(int code) {
+        if (code != 0) {
+            if (code == 1) {
+                startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+            } else if (code == 2) {
+                //server unreachable (clear text communication not possible)
+                makeNetworkRequests();
+            }
+        }
+    }
+
+    private void focusToBottom() {
+        //load animation for error tv
+        fadeIn = AnimationUtils.loadAnimation(this, R.anim.fade_in);
+        mTextViewError.setAnimation(fadeIn);
+        mTextViewError.requestFocus();
+    }
 }//end class

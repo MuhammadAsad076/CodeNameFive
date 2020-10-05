@@ -7,12 +7,20 @@ import androidx.cardview.widget.CardView;
 import androidx.core.content.FileProvider;
 
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.media.MediaPlayer;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
@@ -36,6 +44,7 @@ import com.itridtechnologies.codenamefive.Models.RegistrationModels.SecondRegist
 import com.itridtechnologies.codenamefive.R;
 import com.itridtechnologies.codenamefive.RetrofitInterfaces.PartnerRegistrationApi;
 import com.itridtechnologies.codenamefive.UIViews.Fragments.FragBottomDialog;
+import com.itridtechnologies.codenamefive.utils.UniversalDialog;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -44,6 +53,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Objects;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -58,7 +68,8 @@ import static com.itridtechnologies.codenamefive.Const.Constants.ALLOWED_FILE_SI
 import static com.itridtechnologies.codenamefive.Const.Constants.BASE_URL;
 import static com.itridtechnologies.codenamefive.Const.Constants.ONE_MB_IN_BYTES;
 
-public class RegisterFinalStep extends AppCompatActivity implements View.OnClickListener, FragBottomDialog.BottomSheetListener {
+public class RegisterFinalStep extends AppCompatActivity implements View.OnClickListener, FragBottomDialog.BottomSheetListener,
+        UniversalDialog.DialogListener {
 
     //constants
     private static final String TAG = "RegisterFinalStep";
@@ -68,15 +79,18 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
     private static boolean img1 = false;
     private static boolean img2 = false;
     private static boolean img3 = false;
+    private static boolean hasUserAgreed = false;
     MultipartBody.Part file1Parts;
     MultipartBody.Part file2Parts;
     MultipartBody.Part file3Parts;
     MultipartBody.Part file4Parts;
     PartnerRegistrationApi mRegistrationApi;
-
+    MediaPlayer player;
+    Animation fadeIn;
     //ui views
     private TextView mTextViewDocumentError;
     private TextView mTextViewAdrProofError;
+    private TextView mTextViewAgreementError;
     private TableRow mTableRowFrontDoc;
     private TableRow mTableRowBackDoc;
     private TableRow mTableRowAddressDoc;
@@ -89,7 +103,6 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
     private CardView uploadProgressView;
     private ProgressBar mProgressBar;
     private TextView mTextViewProgress;
-
     //vars
     private Uri mFrontDocUri;
     private Uri mBackDocUri;
@@ -99,8 +112,6 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
     private String FRONT_DOCUMENT_PATH = "";
     private String BACK_DOCUMENT_PATH = "";
     private String ADDRESS_DOCUMENT_PATH = "";
-    private boolean hasUserAgreed = false;
-
     private String mFileName1;
     private String mFileName2;
     private String mFileName3;
@@ -114,6 +125,7 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
         //find views
         mTextViewDocumentError = findViewById(R.id.tv_error_documents);
         mTextViewAdrProofError = findViewById(R.id.tv_error_address);
+        mTextViewAgreementError = findViewById(R.id.tv_error_agreement);
 
         mImageViewDoneFront = findViewById(R.id.img_done_front);
         mImageViewDoneBack = findViewById(R.id.img_done_back);
@@ -172,6 +184,11 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
 
             case R.id.btn_submit_application:
 
+                //clear error screens
+                mTextViewDocumentError.setText("");
+                mTextViewAdrProofError.setText("");
+                mTextViewAgreementError.setText("");
+
                 //validation
                 if (updateUIWithError()) {
                     //show progress bar
@@ -183,8 +200,16 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
                      * */
                     if (prepareFileParts()) {
 
-                        buildRetrofit();
-                        uploadDocument1();
+                        //files are good, but check for internet to start upload
+                        if (isNetworkOk()) {
+                            //final go...
+                            buildRetrofit();
+                            uploadDocument1();
+                        } else {
+                            //no internet
+                            uploadProgressView.setVisibility(View.GONE);
+                            showInternetErrorDialog();
+                        }
 
                     } else {
                         Toast.makeText(this, "Internal Error: code rfs", Toast.LENGTH_SHORT).show();
@@ -198,31 +223,6 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
 
     }// onClick
 
-    private void dialogUploadOptions() {
-
-        final CharSequence[] items = {"Camera", "Gallery"};
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Choose from upload options");
-
-        //on click
-        builder.setItems(items, (dialogInterface, i) -> {
-
-            if (items[i].equals("Camera")) {
-                //open camera intent
-                openCamera();
-
-            } else if (items[i].equals("Gallery")) {
-                //open gallery intent
-                galleryAddPic();
-            }
-
-        }).setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss());
-
-        //build and create
-        builder.create().show();
-
-    }//end dialog
 
     private void openCamera() {
         Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
@@ -373,12 +373,12 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
 
                         } else if (code == 1) {
                             //set a boolean to false
-                            img2 = true;
+                            img2 = false;
                             Toast.makeText(this, "Error: Maximum allowed file size is 5MB", Toast.LENGTH_LONG).show();
 
                         } else if (code == 2) {
                             //set a boolean to false
-                            img2 = true;
+                            img2 = false;
                             Toast.makeText(this, "Error: Unsupported file type\nSupported formats are .png .jpg .jpeg .pdf"
                                     , Toast.LENGTH_LONG).show();
                         }
@@ -579,18 +579,29 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
     private boolean updateUIWithError() {
 
         if (!img1) {
-            mTextViewDocumentError.setText(R.string.front_document);
-            return false;
 
-        } else if (!img2) {
-            mTextViewDocumentError.setText(R.string.back_document);
+            fadeIn = AnimationUtils.loadAnimation(this, R.anim.fade_in);
+            mTextViewDocumentError.setText(R.string.front_document);
+            mTextViewDocumentError.setAnimation(fadeIn);
             return false;
 
         } else if (!img3) {
+
+            fadeIn = AnimationUtils.loadAnimation(this, R.anim.fade_in);
             mTextViewAdrProofError.setText(R.string.address_proof);
+            mTextViewAdrProofError.setAnimation(fadeIn);
             return false;
+
+        } else if (!hasUserAgreed) {
+
+            fadeIn = AnimationUtils.loadAnimation(this, R.anim.fade_in);
+            mTextViewAgreementError.setText(R.string.agreement_error);
+            mTextViewAgreementError.setAnimation(fadeIn);
+            return false;
+
+        } else {
+            return true;
         }
-        return true;
     }//end update ui
 
     private JsonObject fetchOldData() {
@@ -629,17 +640,25 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
         Log.d(TAG, "fetchOldData: profile img uri: " + mProfileUri);
 
         File file1 = new File(getRealPathFromURI(DocumentUriModel.frontDoc));
-        File file2 = new File(getRealPathFromURI(DocumentUriModel.backDoc));
+        File file2;
+
+        //if there is exists back document
+        //only then we want to prepare it for upload
+        if (img2) {
+            file2 = new File(getRealPathFromURI(DocumentUriModel.backDoc));
+        } else {
+            file2 = null;
+        }
+
         File file3 = new File(getRealPathFromURI(DocumentUriModel.addressDoc));
         File file4 = new File(getRealPathFromURI(mProfileUri));
 
         String mediaType1 = getContentResolver().getType(DocumentUriModel.frontDoc);
-        String mediaType2 = getContentResolver().getType(DocumentUriModel.backDoc);
         String mediaType3 = getContentResolver().getType(DocumentUriModel.addressDoc);
         String mediaType4 = getContentResolver().getType(mProfileUri);
         Log.d(TAG, "prepareFileParts: media type of profile pic: " + mediaType4);
 
-        if (mediaType1 != null && mediaType2 != null && mediaType3 != null && mediaType4 != null) {
+        if (mediaType1 != null && mediaType3 != null && mediaType4 != null) {
 
             //part 1
             file1Parts = MultipartBody.Part.createFormData("file",
@@ -651,13 +670,22 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
             );
 
             //part 2
-            file2Parts = MultipartBody.Part.createFormData("file",
-                    file2.getName(),
-                    RequestBody.create(
-                            MediaType.parse(mediaType2),
-                            file2
-                    )
-            );
+            if (file2 != null) {
+                try {
+                    String mediaType2 = getContentResolver().getType(DocumentUriModel.backDoc);
+                    assert mediaType2 != null;
+                    file2Parts = MultipartBody.Part.createFormData("file",
+                            file2.getName(),
+                            RequestBody.create(
+                                    MediaType.parse(mediaType2),
+                                    file2
+                            )
+                    );
+                } catch (NullPointerException ex) {
+                    Log.d(TAG, "prepareFileParts: " + ex);
+                }
+
+            }//if not optional case
 
             //part 3
             file3Parts = MultipartBody.Part.createFormData("file",
@@ -712,15 +740,24 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
                         //set file name coming from api
                         mFileName1 = details.getName();
                         //next api
-                        uploadDocument2();
+                        //but if img is optionally null, then
+                        if (img2) {
+                            uploadDocument2();
+                        } else {
+                            uploadDocument3();
+                        }
+                    } else if (response.code() == 500) {
+                        uploadProgressView.setVisibility(View.GONE);
+                        showServerErrorDialog();
                     }
                 }
-            }
+            }//response
 
             @Override
             public void onFailure(@NotNull Call<PojoImageResponse> call, @NotNull Throwable t) {
                 Log.d(TAG, "onFailure: " + t.getMessage());
                 uploadProgressView.setVisibility(View.GONE);
+                showServerErrorDialog();
             }
         });
     }//doc 1
@@ -745,6 +782,10 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
                         mFileName2 = details.getName();
                         //next api
                         uploadDocument3();
+
+                    } else if (response.code() == 500) {
+                        uploadProgressView.setVisibility(View.GONE);
+                        showServerErrorDialog();
                     }
                 }
             }
@@ -753,6 +794,7 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
             public void onFailure(@NotNull Call<PojoImageResponse> call, @NotNull Throwable t) {
                 Log.d(TAG, "onFailure: " + t.getMessage());
                 uploadProgressView.setVisibility(View.GONE);
+                showServerErrorDialog();
             }
         });
     }//doc 2
@@ -777,6 +819,10 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
                         mFileName3 = details.getName();
                         //last api
                         uploadDocument4();
+
+                    } else if (response.code() == 500) {
+                        uploadProgressView.setVisibility(View.GONE);
+                        showServerErrorDialog();
                     }
                 }
             }
@@ -786,6 +832,7 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
                 Log.d(TAG, "onFailure: " + t.getMessage());
                 //dismiss upload progress bar
                 uploadProgressView.setVisibility(View.GONE);
+                showServerErrorDialog();
             }
         });
     }//doc 3
@@ -812,6 +859,9 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
                         Log.d(TAG, "onResponse: partner data:" + fetchOldData().toString());
                         completePartnerRegistration(fetchOldData());
 
+                    } else if (response.code() == 500) {
+                        uploadProgressView.setVisibility(View.GONE);
+                        showServerErrorDialog();
                     }
                 }
             }
@@ -821,6 +871,7 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
                 Log.d(TAG, "onFailure: " + t.getMessage());
                 //dismiss upload progress bar
                 uploadProgressView.setVisibility(View.GONE);
+                showServerErrorDialog();
             }
         });
     }//doc 4
@@ -837,16 +888,20 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
                     if (response.body() != null) {
                         //update progress
                         updateUploadProgress(100, R.string.progress_100_percent);
-                        uploadProgressView.setVisibility(View.GONE);
+                        uploadProgressView.setElevation(0);
+
 
                         Log.d(TAG, "onResponse: partner response code: " + response.code());
                         Log.d(TAG, "onResponse: partner was successful: " + response.body().isSuccess());
                         Log.d(TAG, "onResponse: partner msg: " + response.body().getMsg());
 
-                        Toast.makeText(RegisterFinalStep.this, "Mubarak Hoo, tum partner hoo", Toast.LENGTH_LONG).show();
+                        uploadProgressView.setVisibility(View.GONE);
+                        createVibeAlertWithSound();
+                        showApplicationSubmittedDialog();
                     }
                 } else if (response.code() == 500) {
-                    Toast.makeText(RegisterFinalStep.this, "Error communicating with server..", Toast.LENGTH_SHORT).show();
+                    uploadProgressView.setVisibility(View.GONE);
+                    showServerErrorDialog();
                 }
             }//onResponse
 
@@ -854,6 +909,7 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
             public void onFailure(@NotNull Call<EmailPassExistResponse> call, @NotNull Throwable t) {
                 Log.d(TAG, "onFailure: " + t.getMessage());
                 uploadProgressView.setVisibility(View.GONE);
+                showServerErrorDialog();
             }
         });
 
@@ -879,4 +935,124 @@ public class RegisterFinalStep extends AppCompatActivity implements View.OnClick
             galleryAddPic();
         }
     }
+
+    private void showInternetErrorDialog() {
+        UniversalDialog dialog = new UniversalDialog(
+                getResources().getString(R.string.dialog_con_error),
+                getResources().getString(R.string.connection_warning),
+                getResources().getString(R.string.turn_on),
+                getResources().getString(R.string.dialog_cancel),
+                R.drawable.icon_no_internet,
+                1,
+                0
+        );
+        dialog.show(getSupportFragmentManager(), "No Internet");
+    }
+
+    private void showServerErrorDialog() {
+        UniversalDialog dialog = new UniversalDialog(
+                "Could'nt connect to server",
+                "Server unreachable, try again later.",
+                "Retry",
+                getResources().getString(R.string.dialog_cancel),
+                R.drawable.icon_error,
+                2,
+                0
+        );
+        dialog.show(getSupportFragmentManager(), "Server Error");
+    }
+
+    private void showApplicationSubmittedDialog() {
+        UniversalDialog dialog = new UniversalDialog(
+                "Application submitted",
+                "Your application has been successfully submitted",
+                "Continue",
+                "",
+                R.drawable.icon_cloud_done,
+                3,
+                0
+        );
+        dialog.show(getSupportFragmentManager(), "Application Done");
+    }
+
+    @Override
+    public void onDialogButtonClicked(int code) {
+        if (code != 0) {
+            if (code == 1) {
+                startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+            } else if (code == 2) {
+                //server unreachable (clear text communication not possible)
+                if (!isNetworkOk()) {
+                    showInternetErrorDialog();
+                } else {
+                    uploadDocument1();
+                }
+
+            } else if (code == 3) {
+                navToLogin();
+                finish();
+                finishAffinity();
+            }
+        }
+    }
+
+    private void navToLogin() {
+        startActivity(new Intent(this, PartnerLogin.class));
+        overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
+    }
+
+    public boolean isNetworkOk() {
+        boolean connected = false;
+        try {
+            ConnectivityManager cm = (ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo nInfo = cm.getActiveNetworkInfo();
+            connected = nInfo != null && nInfo.isAvailable() && nInfo.isConnected();
+            Log.d(TAG, "isNetworkOk: " + connected);
+
+        } catch (Exception e) {
+            Log.e("Connectivity Exception", Objects.requireNonNull(e.getMessage()));
+        }
+        return connected;
+    }//end method
+
+    private void createVibeAlertWithSound() {
+        Log.d(TAG, "createVibeAlertWithSound: trying to give haptic feedback...");
+        //init vibe
+        Vibrator vibe = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+
+        //check for hardware
+        if (vibe.hasVibrator() && player == null) {
+
+            if (Build.VERSION.SDK_INT >= 26) {
+                //vibrate
+                vibe.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE));
+                player = MediaPlayer.create(this, R.raw.swiftly);
+                //sound
+                player.start();
+                //release player
+                player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mediaPlayer) {
+                        player.release();
+                        player = null;
+                    }
+                });
+            } else {
+                player = MediaPlayer.create(this, R.raw.swiftly);
+                //sound
+                player.start();
+                //release player
+                player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mediaPlayer) {
+                        player.release();
+                        player = null;
+                    }
+                });
+                vibe.vibrate(500);
+            }
+        }//end if
+
+    }//end vibration
+
 }//end class
